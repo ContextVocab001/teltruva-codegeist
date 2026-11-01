@@ -7,6 +7,7 @@ function BusinessCasePage() {
   const categories = loadBusinessCategories()
   const savedReview = loadBusinessCaseReview()
   const [selectedCategory, setSelectedCategory] = useState(savedReview.categoryId)
+  const [selectedPriority, setSelectedPriority] = useState(savedReview.priority)
   const [saveMessage, setSaveMessage] = useState('')
 
   const categoryOptions = useMemo(() => {
@@ -27,8 +28,11 @@ function BusinessCasePage() {
       return
     }
 
-    saveBusinessCaseReview({ categoryId: selectedCategory })
-    setSaveMessage('Case review saved in this browser demo.')
+    saveBusinessCaseReview({
+      categoryId: selectedCategory,
+      priority: selectedPriority,
+    })
+    setSaveMessage('Category and priority saved in this browser demo.')
   }
 
   return (
@@ -110,7 +114,13 @@ function BusinessCasePage() {
 
             <label>
               Priority
-              <select defaultValue="normal">
+              <select
+                value={selectedPriority}
+                onChange={(event) => {
+                  setSelectedPriority(event.target.value)
+                  setSaveMessage('')
+                }}
+              >
                 <option value="low">Low</option>
                 <option value="normal">Normal</option>
                 <option value="high">High</option>
