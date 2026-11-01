@@ -6,6 +6,7 @@ import type { ChangeEvent, DragEvent } from 'react'
 import './App.css'
 import PaymentModal from './components/payment/PaymentModal'
 import ProcessingOverlay from './components/processing/ProcessingOverlay'
+import BusinessPage from './components/business/BusinessPage'
 import type { CaptureOrderResponse } from './types/payment'
 import type { TeltruvaCase } from './types/case'
 import type { ProcessingStage } from './types/processing'
@@ -212,7 +213,7 @@ function readPaidPayment(currentCase: TeltruvaCase | null): StoredPaymentSession
   return null
 }
 
-function App() {
+function ConsumerApp() {
   const [language, setLanguage] = useState<Lang>('en')
   const [recipientLanguage, setRecipientLanguage] = useState<Lang>('en')
   const [step, setStep] = useState<Step>('email')
@@ -692,6 +693,16 @@ function App() {
     <PaymentModal language={language} isOpen={showPaymentModal} caseContext={currentCase ?? undefined} onClose={()=>setShowPaymentModal(false)} onCompleted={handlePaymentCompleted} />
     {showModal&&<div className="modal-bg" onMouseDown={()=>setShowModal(false)}><section className="modal" onMouseDown={e=>e.stopPropagation()}><button className="close" onClick={()=>setShowModal(false)}>×</button><header><span>AI</span><div><p>{t.modalLabel}</p><h2>{canAnalyze?t.ready:t.missing}</h2></div></header><div className="status"><div className={hasMessage?'ok':hasFiles?'info':'bad'}><span className="status-icon">{hasMessage?'✓':hasFiles?'i':'!'}</span><div><b>{t.tabs[0]}</b><p>{hasMessage?t.added:hasFiles?t.sourceFromDocs:t.sourceMissing}</p></div></div><div className={hasFiles?'ok':'info'}><span className="status-icon">{hasFiles?'✓':'i'}</span><div><b>{t.tabs[1]}</b><p>{hasFiles?`${files.length} ${t.added}`:t.optionalDocs}</p></div></div><div className={hasRequest?'ok':'bad'}><span className="status-icon">{hasRequest?'✓':'!'}</span><div><b>{t.tabs[2]}</b><p>{hasRequest?t.added:t.requestMissing}</p></div></div></div>{analysisError&&<div className="analysis-api-error" role="alert">{analysisError}</div>}<footer><button onClick={()=>setShowModal(false)} disabled={isAnalyzing}>{canAnalyze?t.reviewInputs:t.addMissing}</button>{canAnalyze&&<button className="primary" onClick={continueToPaidAnalysis} disabled={isAnalyzing}>{isAnalyzing ? (language==='ja'?'整理しています…':language==='es'?'Organizando…':'Organizing…') : paidCapture ? (language==='ja'?'支払い済み・案件整理を再試行 →':language==='es'?'Pago completado · Reintentar análisis →':'Paid · Retry case analysis →') : `${t.organize} →`}</button>}</footer></section></div>}
   </div>
+}
+
+function App() {
+  const normalizedPath = window.location.pathname.replace(/\/+$/, '') || '/'
+
+  if (normalizedPath === '/business') {
+    return <BusinessPage />
+  }
+
+  return <ConsumerApp />
 }
 
 export default App

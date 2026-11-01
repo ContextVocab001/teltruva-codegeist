@@ -1,0 +1,112 @@
+*{box-sizing:border-box}.business-page{min-height:100vh;background:#f5f8fc;color:#152238;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.business-header{height:76px;padding:0 clamp(24px,5vw,76px);display:flex;align-items:center;justify-content:space-between;gap:24px;border-bottom:1px solid #dce5f0;background:rgba(255,255,255,.94);position:sticky;top:0;z-index:10;backdrop-filter:blur(14px)}.business-brand{display:flex;align-items:center;gap:12px;border:0;background:transparent;color:#17243a;cursor:pointer;text-align:left}.business-brand-mark{width:42px;height:42px;display:grid;place-items:center;border-radius:12px;background:linear-gradient(135deg,#2f6df6,#7047df);color:#fff;font-size:20px;font-weight:800}.business-brand strong,.business-brand small{display:block}.business-brand strong{font-size:20px;line-height:1.1}.business-brand small{margin-top:3px;color:#66768c;font-size:12px;font-weight:700;letter-spacing:.04em}.business-header-actions{display:flex;align-items:center;gap:18px}.business-header-actions>span{color:#63738a;font-size:13px;font-weight:650}.business-header-actions button{padding:10px 15px;border:1px solid #cbd8e7;border-radius:9px;background:#fff;color:#24405f;font-weight:750;cursor:pointer}.business-hero{padding:clamp(64px,8vw,112px) clamp(24px,6vw,92px);display:grid;grid-template-columns:minmax(0,1.12fr) minmax(360px,.88fr);align-items:center;gap:clamp(54px,8vw,118px);background:radial-gradient(circle at 78% 20%,rgba(102,79,223,.12),transparent 31%),linear-gradient(180deg,#fff,#f4f8fd)}.business-hero-copy{max-width:760px}.business-eyebrow,.business-section-heading>p,.business-roadmap p{margin:0 0 18px;color:#3e5bd8;font-size:13px;font-weight:850;letter-spacing:.12em;text-transform:uppercase}.business-hero h1{margin:0;color:#10223e;font-size:clamp(42px,5.4vw,76px);line-height:1.02;letter-spacing:-.045em}.business-lead{max-width:700px;margin:28px 0 0;color:#53657b;font-size:clamp(17px,1.65vw,21px);line-height:1.7}.business-hero-actions{margin-top:34px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}.business-status{padding:11px 14px;border-radius:999px;background:#e7edff;color:#334fc4;font-size:13px;font-weight:800}.business-hero-actions a{color:#29476c;font-size:14px;font-weight:800;text-decoration:none}.business-preview{padding:28px;border:1px solid #d7e2ef;border-radius:24px;background:#fff;box-shadow:0 30px 80px rgba(32,55,90,.16)}.business-preview-top{display:flex;justify-content:space-between;gap:16px;padding-bottom:18px;border-bottom:1px solid #e6edf5;color:#5f7085;font-size:13px;font-weight:750}.business-preview-top mark{padding:6px 9px;border-radius:999px;background:#eaf8ef;color:#217248;font-size:11px}.business-case-title{display:flex;align-items:center;gap:13px;padding:24px 0 18px}.business-case-icon{width:44px;height:44px;display:grid;place-items:center;border-radius:13px;background:#eef1ff;color:#4559cb;font-size:13px;font-weight:850}.business-case-title small,.business-case-title strong{display:block}.business-case-title small{margin-bottom:3px;color:#708097;font-size:12px}.business-case-title strong{font-size:18px}.business-case-details{margin:0;display:grid;grid-template-columns:1fr 1fr;gap:10px}.business-case-details div{padding:13px;border-radius:12px;background:#f5f8fc}.business-case-details dt{color:#718198;font-size:11px;font-weight:700}.business-case-details dd{margin:5px 0 0;color:#263b58;font-size:13px;font-weight:800}.business-review-note{margin-top:16px;padding:14px;display:flex;gap:10px;border:1px solid #d7e5f5;border-radius:12px;background:#f3f8ff}.business-review-note>span{width:24px;height:24px;display:grid;place-items:center;border-radius:50%;background:#dff4e7;color:#197047;font-weight:850}.business-review-note p{margin:0;color:#53667e;font-size:12px;line-height:1.55}.business-review-note strong{color:#243a57}.business-value{padding:0 clamp(24px,6vw,92px) 76px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.business-value article{padding:25px 26px;border:1px solid #dce5ef;border-radius:16px;background:#fff}.business-value strong{color:#203958;font-size:16px}.business-value p{margin:9px 0 0;color:#68798d;font-size:14px;line-height:1.6}.business-workflow{padding:92px clamp(24px,6vw,92px);background:#10223a;color:#fff}.business-section-heading{max-width:760px}.business-section-heading>p{color:#8ba4ff}.business-section-heading h2{margin:0;font-size:clamp(32px,4vw,52px);line-height:1.08;letter-spacing:-.035em}.business-section-heading>span{display:block;margin-top:20px;color:#aebcd0;font-size:16px;line-height:1.7}.business-steps{margin-top:52px;display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.business-steps article{padding:27px;border:1px solid #2a405e;border-radius:17px;background:#162c48}.business-steps article>span{color:#8da6ff;font-size:12px;font-weight:850;letter-spacing:.12em}.business-steps h3{margin:28px 0 11px;font-size:20px}.business-steps p{margin:0;color:#aebcd0;font-size:14px;line-height:1.7}.business-roadmap{padding:80px clamp(24px,6vw,92px);display:grid;grid-template-columns:1.1fr .9fr;gap:70px;align-items:center;background:#fff}.business-roadmap h2{max-width:690px;margin:0;color:#142842;font-size:clamp(28px,3.8vw,46px);line-height:1.12;letter-spacing:-.03em}.business-roadmap-items{display:grid;grid-template-columns:1fr 1fr;gap:12px}.business-roadmap-items span{padding:16px;border:1px solid #d8e3ef;border-radius:12px;background:#f7f9fc;color:#344d6b;font-size:13px;font-weight:800}.business-footer{padding:30px clamp(24px,6vw,92px);display:flex;justify-content:space-between;gap:30px;background:#09182b;color:#91a5bf}.business-footer>div{display:flex;gap:18px;align-items:center}.business-footer strong{color:#fff;font-size:18px}.business-footer span{font-size:12px}@media(max-width:900px){.business-header-actions>span{display:none}.business-hero{grid-template-columns:1fr}.business-preview{max-width:680px}.business-value,.business-steps{grid-template-columns:1fr}.business-roadmap{grid-template-columns:1fr}.business-footer{align-items:flex-start;flex-direction:column}}@media(max-width:560px){.business-header{height:auto;padding-top:14px;padding-bottom:14px}.business-header-actions button{font-size:12px}.business-hero{padding-top:58px}.business-case-details,.business-roadmap-items{grid-template-columns:1fr}.business-preview{padding:20px}.business-preview-top{align-items:flex-start;flex-direction:column}.business-footer>div{align-items:flex-start;flex-direction:column;gap:7px}}
+
+
+/* Isolate the business page from the legacy Vite starter styles in index.css. */
+body.business-route{background:#f5f8fc;color:#152238}
+body.business-route #root{width:100%;max-width:none;margin:0;border:0;text-align:left;display:block}
+body.business-route .business-page h1,body.business-route .business-page h2,body.business-route .business-page h3{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body.business-route .business-hero h1{margin:0;color:#10223e;font-size:clamp(42px,5.4vw,76px);font-weight:760;line-height:1.02;letter-spacing:-.045em;text-align:left}
+body.business-route .business-section-heading h2{margin:0;color:#fff;font-size:clamp(32px,4vw,52px);font-weight:740;line-height:1.08;letter-spacing:-.035em;text-align:left}
+body.business-route .business-roadmap h2{margin:0;color:#142842;font-size:clamp(28px,3.8vw,46px);font-weight:740;line-height:1.12;letter-spacing:-.03em;text-align:left}
+body.business-route .business-steps h3{margin:28px 0 11px;color:#fff;font-size:20px;font-weight:760;line-height:1.25;text-align:left}
+body.business-route .business-page p{margin-top:0;text-align:left}
+body.business-route .business-value p,body.business-route .business-review-note p,body.business-route .business-steps p{margin-bottom:0}
+@media(max-width:900px){body.business-route .business-hero h1{font-size:clamp(40px,9vw,64px)}}
+
+/* Phase 3a: accessible typography scale for business page */
+body.business-route .business-page{font-size:18px;line-height:1.6}
+body.business-route .business-header{min-height:92px;height:auto}
+body.business-route .business-brand-mark{width:52px;height:52px;border-radius:15px;font-size:25px}
+body.business-route .business-brand strong{font-size:27px;line-height:1.15}
+body.business-route .business-brand small{margin-top:5px;font-size:16px;line-height:1.3;letter-spacing:.02em}
+body.business-route .business-header-actions{gap:24px}
+body.business-route .business-header-actions>span{font-size:16px;line-height:1.4}
+body.business-route .business-header-actions button{min-height:48px;padding:11px 18px;font-size:17px}
+body.business-route .business-eyebrow,body.business-route .business-section-heading>p,body.business-route .business-roadmap p{font-size:16px;line-height:1.4;letter-spacing:.1em}
+body.business-route .business-hero{padding-top:88px;padding-bottom:86px}
+body.business-route .business-hero h1{font-size:clamp(52px,4.7vw,74px);line-height:1.08}
+body.business-route .business-lead{font-size:20px;line-height:1.72}
+body.business-route .business-status,body.business-route .business-hero-actions a{font-size:16px;line-height:1.4}
+body.business-route .business-status{padding:12px 16px}
+body.business-route .business-preview{padding:32px}
+body.business-route .business-preview-top{font-size:16px;line-height:1.4}
+body.business-route .business-preview-top mark{padding:8px 12px;font-size:15px;line-height:1.35}
+body.business-route .business-case-icon{width:50px;height:50px;font-size:16px}
+body.business-route .business-case-title small{font-size:16px;line-height:1.4}
+body.business-route .business-case-title strong{font-size:21px;line-height:1.35}
+body.business-route .business-case-details div{padding:16px}
+body.business-route .business-case-details dt{font-size:15px;line-height:1.4}
+body.business-route .business-case-details dd{font-size:17px;line-height:1.4}
+body.business-route .business-review-note{padding:16px}
+body.business-route .business-review-note p{font-size:16px;line-height:1.55}
+body.business-route .business-value strong{font-size:19px;line-height:1.35}
+body.business-route .business-value p{font-size:17px;line-height:1.65}
+body.business-route .business-section-heading h2{font-size:clamp(38px,3.7vw,54px);line-height:1.13}
+body.business-route .business-section-heading>span{font-size:18px;line-height:1.7}
+body.business-route .business-steps article>span{font-size:16px;line-height:1.4}
+body.business-route .business-steps h3{font-size:23px;line-height:1.3}
+body.business-route .business-steps p{font-size:17px;line-height:1.68}
+body.business-route .business-roadmap h2{font-size:clamp(34px,3.4vw,48px);line-height:1.16}
+body.business-route .business-roadmap-items span{padding:18px;font-size:17px;line-height:1.45}
+body.business-route .business-footer{padding-top:36px;padding-bottom:36px}
+body.business-route .business-footer strong{font-size:22px;line-height:1.35}
+body.business-route .business-footer span{font-size:16px;line-height:1.5}
+@media(max-width:900px){body.business-route .business-page{font-size:18px}body.business-route .business-hero{padding-top:68px}body.business-route .business-hero h1{font-size:clamp(44px,9vw,62px)}body.business-route .business-header-actions>span{display:none}}
+@media(max-width:560px){body.business-route .business-brand strong{font-size:23px}body.business-route .business-brand small{font-size:15px}body.business-route .business-header-actions button{font-size:15px;padding:10px 13px}body.business-route .business-hero h1{font-size:clamp(39px,12vw,50px)}body.business-route .business-lead{font-size:18px}}
+
+/* Phase 3A-2: larger readable supporting text; primary headings remain balanced. */
+body.business-route .business-page{font-size:20px;line-height:1.65}
+body.business-route .business-header{min-height:104px}
+body.business-route .business-brand-mark{width:58px;height:58px;border-radius:17px;font-size:29px}
+body.business-route .business-brand strong{font-size:31px;line-height:1.12}
+body.business-route .business-brand small{font-size:18px;line-height:1.35}
+body.business-route .business-header-actions>span{font-size:18px;line-height:1.45}
+body.business-route .business-header-actions button{min-height:52px;padding:12px 20px;font-size:19px}
+body.business-route .business-eyebrow,body.business-route .business-section-heading>p,body.business-route .business-roadmap p{font-size:18px;line-height:1.45}
+body.business-route .business-lead{font-size:22px;line-height:1.72}
+body.business-route .business-status,body.business-route .business-hero-actions a{font-size:18px;line-height:1.45}
+body.business-route .business-status{padding:13px 18px}
+body.business-route .business-preview-top{font-size:18px;line-height:1.45}
+body.business-route .business-preview-top mark{font-size:17px;line-height:1.4}
+body.business-route .business-case-icon{width:54px;height:54px;font-size:18px}
+body.business-route .business-case-title small{font-size:18px;line-height:1.45}
+body.business-route .business-case-title strong{font-size:24px;line-height:1.35}
+body.business-route .business-case-details dt{font-size:17px;line-height:1.45}
+body.business-route .business-case-details dd{font-size:20px;line-height:1.45}
+body.business-route .business-review-note p{font-size:18px;line-height:1.6}
+body.business-route .business-value strong{font-size:22px;line-height:1.4}
+body.business-route .business-value p{font-size:19px;line-height:1.68}
+body.business-route .business-section-heading>span{font-size:20px;line-height:1.72;max-width:900px}
+body.business-route .business-steps article>span{font-size:18px;line-height:1.45}
+body.business-route .business-steps h3{font-size:26px;line-height:1.35}
+body.business-route .business-steps p{font-size:19px;line-height:1.7}
+body.business-route .business-roadmap-items span{padding:20px;font-size:19px;line-height:1.5}
+body.business-route .business-footer strong{font-size:25px;line-height:1.4}
+body.business-route .business-footer span{font-size:18px;line-height:1.55}
+@media(max-width:900px){body.business-route .business-page{font-size:19px}body.business-route .business-lead{font-size:21px}}
+@media(max-width:560px){body.business-route .business-brand strong{font-size:26px}body.business-route .business-brand small{font-size:17px}body.business-route .business-header-actions button{font-size:16px}body.business-route .business-lead{font-size:20px}body.business-route .business-value p,body.business-route .business-steps p{font-size:18px}}
+
+/* Phase 3A-3: final large-text adjustment for comfortable reading at 100% zoom. */
+body.business-route .business-page{font-size:21px;line-height:1.68}
+body.business-route .business-brand small{font-size:20px;font-weight:700;line-height:1.4;color:#52647b}
+body.business-route .business-header-actions>span{font-size:20px;font-weight:700;line-height:1.45;color:#52647b}
+body.business-route .business-header-actions button{font-size:20px;font-weight:800}
+body.business-route .business-lead{font-size:22px;line-height:1.75}
+body.business-route .business-preview-top{font-size:20px}
+body.business-route .business-preview-top mark{font-size:18px;font-weight:800}
+body.business-route .business-case-title small{font-size:19px;color:#60728d}
+body.business-route .business-case-title strong{font-size:25px}
+body.business-route .business-case-details dt{font-size:18px;font-weight:750;color:#526987}
+body.business-route .business-case-details dd{font-size:21px;font-weight:850}
+body.business-route .business-review-note p{font-size:20px;line-height:1.62}
+body.business-route .business-value strong{font-size:24px}
+body.business-route .business-value p{font-size:21px;line-height:1.68}
+body.business-route .business-section-heading>span{font-size:21px}
+body.business-route .business-steps article>span{font-size:19px}
+body.business-route .business-steps h3{font-size:27px}
+body.business-route .business-steps p{font-size:21px;font-weight:500;line-height:1.68;color:#c4d2e5}
+body.business-route .business-roadmap-items span{font-size:21px;font-weight:800}
+body.business-route .business-footer strong{font-size:26px}
+body.business-route .business-footer span{font-size:20px;line-height:1.55}
+@media(max-width:900px){body.business-route .business-page{font-size:20px}body.business-route .business-value p,body.business-route .business-steps p{font-size:20px}}
+@media(max-width:560px){body.business-route .business-brand small{font-size:18px}body.business-route .business-header-actions button{font-size:17px}body.business-route .business-case-details dt{font-size:17px}body.business-route .business-case-details dd{font-size:20px}body.business-route .business-footer span{font-size:18px}}
