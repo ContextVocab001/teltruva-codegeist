@@ -23,3 +23,27 @@
 .delete-dialog-actions .confirm-delete-button{border-color:#bd4a43;background:#bd4a43;color:#fff}
 .delete-dialog-actions .confirm-delete-button:hover{background:#a83b35}
 @media(max-width:560px){.delete-dialog{padding:26px 20px}.delete-dialog-actions{flex-direction:column-reverse}.delete-dialog-actions button{width:100%}}
+
+/* Phase 6: saved case-category feedback. */
+.case-save-message{
+  margin:12px 0 0;
+  padding:11px 13px;
+  border:1px solid #c8dfd2;
+  border-radius:10px;
+  background:#eff9f3;
+  color:#286044;
+  font-size:17px;
+  font-weight:720;
+  line-height:1.45;
+  text-align:center;
+}
+.disabled-category-notice{
+  margin:10px 0 0;
+  padding:11px 13px;
+  border:1px solid #ead39a;
+  border-radius:10px;
+  background:#fff9ec;
+  color:#705825;
+  font-size:16px;
+  line-height:1.5;
+}

@@ -1,16 +1,35 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './business.css'
 import { loadBusinessCategories } from './categoryMaster'
+import { loadBusinessCaseReview, saveBusinessCaseReview } from './caseReviewStorage'
 
 function BusinessCasePage() {
-  const [selectedCategory, setSelectedCategory] = useState('')
-  const activeCategories = loadBusinessCategories().filter((category) => category.enabled)
+  const categories = loadBusinessCategories()
+  const savedReview = loadBusinessCaseReview()
+  const [selectedCategory, setSelectedCategory] = useState(savedReview.categoryId)
+  const [saveMessage, setSaveMessage] = useState('')
+
+  const categoryOptions = useMemo(() => {
+    return categories.filter((category) => category.enabled || category.id === selectedCategory)
+  }, [categories, selectedCategory])
+
+  const selectedCategoryRecord = categories.find((category) => category.id === selectedCategory)
 
   useEffect(() => {
     document.body.classList.add('business-route')
     document.title = 'Case TLT-2026-001 | Teltruva'
     return () => document.body.classList.remove('business-route')
   }, [])
+
+  const saveReview = () => {
+    if (!selectedCategory) {
+      setSaveMessage('Select a category before saving the review.')
+      return
+    }
+
+    saveBusinessCaseReview({ categoryId: selectedCategory })
+    setSaveMessage('Case review saved in this browser demo.')
+  }
 
   return (
     <div className="business-page">
@@ -67,13 +86,27 @@ function BusinessCasePage() {
 
             <label>
               Category
-              <select value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)}>
+              <select
+                value={selectedCategory}
+                onChange={(event) => {
+                  setSelectedCategory(event.target.value)
+                  setSaveMessage('')
+                }}
+              >
                 <option value="" disabled>Select category</option>
-                {activeCategories.map((category) => (
-                  <option key={category.id} value={category.id}>{category.name}</option>
+                {categoryOptions.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}{category.enabled ? '' : ' (disabled)'}
+                  </option>
                 ))}
               </select>
             </label>
+
+            {selectedCategoryRecord && !selectedCategoryRecord.enabled && (
+              <p className="disabled-category-notice">
+                This category is disabled for new selections, but remains on this previously saved case.
+              </p>
+            )}
 
             <label>
               Priority
@@ -99,7 +132,9 @@ function BusinessCasePage() {
               <b>✓</b>
               <p><strong>Human review required.</strong> Teltruva does not choose the company category, priority, or assignee.</p>
             </div>
-            <button className="primary-button full" type="button">Save review</button>
+
+            <button className="primary-button full" type="button" onClick={saveReview}>Save review</button>
+            {saveMessage && <p className="case-save-message" aria-live="polite">{saveMessage}</p>}
           </aside>
         </article>
       </main>
