@@ -8,6 +8,7 @@ import PaymentModal from './components/payment/PaymentModal'
 import ProcessingOverlay from './components/processing/ProcessingOverlay'
 import BusinessPage from './components/business/BusinessPage'
 import BusinessCasePage from './components/business/BusinessCasePage'
+import BusinessSettingsPage from './components/business/BusinessSettingsPage'
 import type { CaptureOrderResponse } from './types/payment'
 import type { TeltruvaCase } from './types/case'
 import type { ProcessingStage } from './types/processing'
@@ -669,6 +670,7 @@ function App() {
   const normalizedPath = (window.location.pathname.replace(/\/+$/, '') || '/').toLowerCase()
   if (normalizedPath === '/business') return <BusinessPage />
   if (normalizedPath === '/business/cases/demo') return <BusinessCasePage />
+  if (normalizedPath === '/business/settings') return <BusinessSettingsPage />
   return <ConsumerApp />
 }
 

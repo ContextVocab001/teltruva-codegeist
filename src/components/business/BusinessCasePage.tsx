@@ -26,7 +26,7 @@ function BusinessCasePage() {
             <div className="missing-box"><b>!</b><div><strong>Missing information</strong><p>Confirm whether the pending card charge has posted before the case is sent for action.</p></div></div>
           </section>
           <aside className="decision-panel">
-            <div className="decision-heading"><h2>Company review</h2><span>Manual decision</span></div>
+            <div className="decision-heading"><div><h2>Company review</h2><button className="manage-master-link" type="button" onClick={() => window.location.href = '/business/settings'}>Manage categories</button></div><span>Company-managed fields</span></div>
             <label>Category<select defaultValue=""><option value="" disabled>Select category</option><option>Billing</option><option>Reservation</option><option>Service quality</option><option>Refund</option><option>Other</option></select></label>
             <label>Priority<select defaultValue="normal"><option value="low">Low</option><option value="normal">Normal</option><option value="high">High</option><option value="urgent">Urgent</option></select></label>
             <label>Assigned team<select defaultValue=""><option value="" disabled>Select team</option><option>Billing team</option><option>Customer care</option><option>Hotel operations</option></select></label>
