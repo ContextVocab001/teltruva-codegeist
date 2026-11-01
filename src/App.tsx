@@ -588,6 +588,44 @@ function App() {
     </div></header>
   )
 
+  const footerCopy = ui({
+    en: {
+      description: 'Clear multilingual support for consumer issues, with every message reviewed by you before use.',
+      navigation: 'Information', about: 'About', contact: 'Contact', privacy: 'Privacy Policy', terms: 'Terms of Use', refunds: 'Refund Policy',
+      status: 'These information pages are being prepared for launch.',
+    },
+    ja: {
+      description: '消費者問題を多言語で整理し、すべての文面を利用前に自分で確認できるサポートです。',
+      navigation: 'サイト情報', about: 'Teltruvaについて', contact: 'お問い合わせ', privacy: 'プライバシーポリシー', terms: '利用規約', refunds: '返金ポリシー',
+      status: '各案内ページは正式公開に向けて準備中です。',
+    },
+    es: {
+      description: 'Asistencia multilingüe clara para problemas de consumo, con revisión de cada mensaje antes de usarlo.',
+      navigation: 'Información', about: 'Acerca de', contact: 'Contacto', privacy: 'Política de privacidad', terms: 'Términos de uso', refunds: 'Política de reembolso',
+      status: 'Estas páginas informativas están en preparación para el lanzamiento.',
+    },
+  })
+  const footerLinks = [
+    { id: 'about', label: footerCopy.about }, { id: 'contact', label: footerCopy.contact },
+    { id: 'privacy', label: footerCopy.privacy }, { id: 'terms', label: footerCopy.terms },
+    { id: 'refunds', label: footerCopy.refunds },
+  ]
+  const siteFooter = (
+    <footer className="site-footer">
+      <div className="site-footer-inner">
+        <section className="site-footer-brand" aria-label="Teltruva">
+          <div className="site-footer-logo" aria-hidden="true">T</div>
+          <div><strong>Teltruva</strong><p>{footerCopy.description}</p></div>
+        </section>
+        <nav className="site-footer-nav" aria-label={footerCopy.navigation}>
+          <strong>{footerCopy.navigation}</strong>
+          <div className="site-footer-links">{footerLinks.map((link) => <span className="site-footer-link" key={link.id}>{link.label}</span>)}</div>
+          <small>{footerCopy.status}</small>
+        </nav>
+      </div>
+      <div className="site-footer-bottom"><span>© 2026 Teltruva</span><span>Tell. Translate. Trust.</span></div>
+    </footer>
+  )
   const intake = (
     <main className="main">
       <section className="hero">
@@ -649,7 +687,7 @@ function App() {
     <main className="workflow-main">{progress(4)}{!translationApproved?<><section className="workflow-heading"><p>{t.translationLabel}</p><h1>{t.translationTitle}</h1><span>{language==='ja'?'右側は、承認した文章だけを忠実に翻訳したものです。新しい要求や事実は追加しません。':t.translationHelp}</span></section><section className="translation-grid"><article><header><span>Aa</span><b>{t.approvedVersion}</b></header><h2>{draftSubject}</h2><pre>{draftBody}</pre></article><article><header><span>⇄</span><b>{t.translatedVersion}</b></header><h2>{translated.subject}</h2><pre>{translated.body}</pre></article></section><div className="workflow-actions"><button onClick={()=>go('draft')}>← {t.backDraft}</button><button className="primary" onClick={()=>{setTranslationApproved(true);window.scrollTo(0,0)}}>{t.approveTranslation} →</button></div></>:<section className="complete contact-complete"><div className="complete-heading"><div className="complete-check">✓</div><div><h2>{language==='ja'?'問い合わせ文の準備ができました':'Your inquiry is ready'}</h2><p>{ui({en:'Confirm the official site yourself, then copy the inquiry or individual fields into an official form or email. Nothing is sent automatically.',ja:'公式サイトを確認し、問い合わせ文または必要な項目を公式フォームやメールへコピーしてください。自動送信はしません。',es:'Confirma el sitio oficial y copia la consulta o los campos necesarios en un formulario o correo oficial. Nada se envía automáticamente.'})}</p></div></div>{analysis?.messageSource.isNoReply&&<div className="no-reply-warning"><b>Do Not Reply</b><p>{language==='ja'?'元のメールアドレスは問い合わせ先候補から除外しました。':'The original address was excluded.'}</p></div>}<h3>{ui({en:'Official site and contact candidates',ja:'公式サイト・問い合わせ先候補',es:'Sitios y contactos oficiales candidatos'})}</h3><div className="contact-candidates">{contactCandidates.length?contactCandidates.map((candidate,index)=><article key={`${candidate.label}-${index}`}><div>{candidate.recommended&&<mark>{ui({en:'Recommended',ja:'おすすめ',es:'Recomendado'})}</mark>}<b>{contactCandidateTitle(candidate)}</b><p>{contactCandidateReason(candidate)}</p>{candidate.kind==='search'&&<small>{ui({en:'Search results are not verified. Open an official-domain result and confirm the company, property, or location before submitting.',ja:'検索結果は未確認です。公式ドメインのページを開き、企業名・施設名・所在地が一致することを確認してください。',es:'Los resultados no están verificados. Abre un resultado del dominio oficial y confirma la empresa o ubicación.'})}</small>}</div><a href={candidate.url} target="_blank" rel="noreferrer">{contactActionLabel(candidate.kind)} ↗</a></article>):<p>{ui({en:'No contact candidate could be created from the uploaded source. Copy the inquiry and search the company’s official site manually.',ja:'資料から問い合わせ先候補を作成できませんでした。問い合わせ文をコピーし、企業の公式サイトを確認してください。',es:'No se pudo crear un contacto candidato. Copia la consulta y busca el sitio oficial manualmente.'})}</p>}</div><section className="final-message"><h3>{ui({en:'Completed inquiry',ja:'完成した問い合わせ文',es:'Consulta completada'})}</h3><label>{t.subject}</label><h2>{translated.subject}</h2><label>{t.message}</label><pre>{translated.body}</pre><div className="copy-actions final-copy-actions"><button className="copy-button secondary-copy" onClick={()=>copyText('subject',translated.subject)}>{copyStatus==='subject'?'✓':language==='ja'?'件名をコピー':'Copy subject'}</button><button className="copy-button secondary-copy" onClick={()=>copyText('message',translated.body)}>{copyStatus==='message'?'✓':language==='ja'?'本文をコピー':'Copy message'}</button><button className="primary copy-button main-copy" onClick={()=>copyText('all',`${translated.subject}\n\n${translated.body}`)}>{copyStatus==='all'?ui({en:'✓ Copied',ja:'✓ コピーしました',es:'✓ Copiado'}):ui({en:'Copy inquiry',ja:'問い合わせ文をコピー',es:'Copiar consulta'})}</button></div></section></section>}</main>
   )
 
-  return <div className="app">{header}{view==='intake'&&intake}{view==='review'&&review}{view==='draft'&&draft}{view==='translation'&&translation}
+  return <div className="app">{header}{view==='intake'&&intake}{view==='review'&&review}{view==='draft'&&draft}{view==='translation'&&translation}{siteFooter}
     <ProcessingOverlay language={language} isVisible={showProcessingOverlay} stage={processingStage} />
     <PaymentModal language={language} isOpen={showPaymentModal} caseContext={currentCase ?? undefined} onClose={()=>setShowPaymentModal(false)} onCompleted={handlePaymentCompleted} />
     {showModal&&<div className="modal-bg" onMouseDown={()=>setShowModal(false)}><section className="modal" onMouseDown={e=>e.stopPropagation()}><button className="close" onClick={()=>setShowModal(false)}>×</button><header><span>AI</span><div><p>{t.modalLabel}</p><h2>{canAnalyze?t.ready:t.missing}</h2></div></header><div className="status"><div className={hasMessage?'ok':hasFiles?'info':'bad'}><span className="status-icon">{hasMessage?'✓':hasFiles?'i':'!'}</span><div><b>{t.tabs[0]}</b><p>{hasMessage?t.added:hasFiles?t.sourceFromDocs:t.sourceMissing}</p></div></div><div className={hasFiles?'ok':'info'}><span className="status-icon">{hasFiles?'✓':'i'}</span><div><b>{t.tabs[1]}</b><p>{hasFiles?`${files.length} ${t.added}`:t.optionalDocs}</p></div></div><div className={hasRequest?'ok':'bad'}><span className="status-icon">{hasRequest?'✓':'!'}</span><div><b>{t.tabs[2]}</b><p>{hasRequest?t.added:t.requestMissing}</p></div></div></div>{analysisError&&<div className="analysis-api-error" role="alert">{analysisError}</div>}<footer><button onClick={()=>setShowModal(false)} disabled={isAnalyzing}>{canAnalyze?t.reviewInputs:t.addMissing}</button>{canAnalyze&&<button className="primary" onClick={continueToPaidAnalysis} disabled={isAnalyzing}>{isAnalyzing ? (language==='ja'?'整理しています…':language==='es'?'Organizando…':'Organizing…') : paidCapture ? (language==='ja'?'支払い済み・案件整理を再試行 →':language==='es'?'Pago completado · Reintentar análisis →':'Paid · Retry case analysis →') : `${t.organize} →`}</button>}</footer></section></div>}
