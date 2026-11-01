@@ -666,7 +666,7 @@ function ConsumerApp() {
 }
 
 function App() {
-  const normalizedPath = window.location.pathname.replace(/\/+$/, '') || '/'
+  const normalizedPath = (window.location.pathname.replace(/\/+$/, '') || '/').toLowerCase()
   if (normalizedPath === '/business') return <BusinessPage />
   if (normalizedPath === '/business/cases/demo') return <BusinessCasePage />
   return <ConsumerApp />
