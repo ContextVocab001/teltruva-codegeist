@@ -7,6 +7,7 @@ import './App.css'
 import PaymentModal from './components/payment/PaymentModal'
 import ProcessingOverlay from './components/processing/ProcessingOverlay'
 import BusinessPage from './components/business/BusinessPage'
+import BusinessCasePage from './components/business/BusinessCasePage'
 import type { CaptureOrderResponse } from './types/payment'
 import type { TeltruvaCase } from './types/case'
 import type { ProcessingStage } from './types/processing'
@@ -590,43 +591,12 @@ function ConsumerApp() {
   )
 
   const footerCopy = ui({
-    en: {
-      description: 'Clear multilingual support for consumer issues, with every message reviewed by you before use.',
-      navigation: 'Information', about: 'About', contact: 'Contact', privacy: 'Privacy Policy', terms: 'Terms of Use', refunds: 'Refund Policy',
-      status: 'These information pages are being prepared for launch.',
-    },
-    ja: {
-      description: '消費者問題を多言語で整理し、すべての文面を利用前に自分で確認できるサポートです。',
-      navigation: 'サイト情報', about: 'Teltruvaについて', contact: 'お問い合わせ', privacy: 'プライバシーポリシー', terms: '利用規約', refunds: '返金ポリシー',
-      status: '各案内ページは正式公開に向けて準備中です。',
-    },
-    es: {
-      description: 'Asistencia multilingüe clara para problemas de consumo, con revisión de cada mensaje antes de usarlo.',
-      navigation: 'Información', about: 'Acerca de', contact: 'Contacto', privacy: 'Política de privacidad', terms: 'Términos de uso', refunds: 'Política de reembolso',
-      status: 'Estas páginas informativas están en preparación para el lanzamiento.',
-    },
+    en: { description: 'Clear multilingual support for consumer issues, with every message reviewed by you before use.', navigation: 'Information', about: 'About', contact: 'Contact', privacy: 'Privacy Policy', terms: 'Terms of Use', refunds: 'Refund Policy', status: 'These information pages are being prepared for launch.' },
+    ja: { description: '消費者問題を多言語で整理し、すべての文面を利用前に自分で確認できるサポートです。', navigation: 'サイト情報', about: 'Teltruvaについて', contact: 'お問い合わせ', privacy: 'プライバシーポリシー', terms: '利用規約', refunds: '返金ポリシー', status: '各案内ページは正式公開に向けて準備中です。' },
+    es: { description: 'Asistencia multilingüe clara para problemas de consumo, con revisión de cada mensaje antes de usarlo.', navigation: 'Información', about: 'Acerca de', contact: 'Contacto', privacy: 'Política de privacidad', terms: 'Términos de uso', refunds: 'Política de reembolso', status: 'Estas páginas informativas están en preparación para el lanzamiento.' },
   })
-  const footerLinks = [
-    { id: 'about', label: footerCopy.about }, { id: 'contact', label: footerCopy.contact },
-    { id: 'privacy', label: footerCopy.privacy }, { id: 'terms', label: footerCopy.terms },
-    { id: 'refunds', label: footerCopy.refunds },
-  ]
-  const siteFooter = (
-    <footer className="site-footer">
-      <div className="site-footer-inner">
-        <section className="site-footer-brand" aria-label="Teltruva">
-          <div className="site-footer-logo" aria-hidden="true">T</div>
-          <div><strong>Teltruva</strong><p>{footerCopy.description}</p></div>
-        </section>
-        <nav className="site-footer-nav" aria-label={footerCopy.navigation}>
-          <strong>{footerCopy.navigation}</strong>
-          <div className="site-footer-links">{footerLinks.map((link) => <span className="site-footer-link" key={link.id}>{link.label}</span>)}</div>
-          <small>{footerCopy.status}</small>
-        </nav>
-      </div>
-      <div className="site-footer-bottom"><span>© 2026 Teltruva</span><span>Tell. Translate. Trust.</span></div>
-    </footer>
-  )
+  const footerLinks = [{ id: 'about', label: footerCopy.about },{ id: 'contact', label: footerCopy.contact },{ id: 'privacy', label: footerCopy.privacy },{ id: 'terms', label: footerCopy.terms },{ id: 'refunds', label: footerCopy.refunds }]
+  const siteFooter = (<footer className="site-footer"><div className="site-footer-inner"><section className="site-footer-brand" aria-label="Teltruva"><div className="site-footer-logo" aria-hidden="true">T</div><div><strong>Teltruva</strong><p>{footerCopy.description}</p></div></section><nav className="site-footer-nav" aria-label={footerCopy.navigation}><strong>{footerCopy.navigation}</strong><div className="site-footer-links">{footerLinks.map((link)=><span className="site-footer-link" key={link.id}>{link.label}</span>)}</div><small>{footerCopy.status}</small></nav></div><div className="site-footer-bottom"><span>© 2026 Teltruva</span><span>Tell. Translate. Trust.</span></div></footer>)
   const intake = (
     <main className="main">
       <section className="hero">
@@ -697,11 +667,8 @@ function ConsumerApp() {
 
 function App() {
   const normalizedPath = window.location.pathname.replace(/\/+$/, '') || '/'
-
-  if (normalizedPath === '/business') {
-    return <BusinessPage />
-  }
-
+  if (normalizedPath === '/business') return <BusinessPage />
+  if (normalizedPath === '/business/cases/demo') return <BusinessCasePage />
   return <ConsumerApp />
 }
 

@@ -1,136 +1,83 @@
 import { useEffect } from 'react'
 import './business.css'
 
-const workflowSteps = [
-  {
-    number: '01',
-    title: 'Receive multilingual inquiries',
-    description: 'Give customers a clear way to explain an issue and share supporting documents in their own language.',
-  },
-  {
-    number: '02',
-    title: 'Structure the case',
-    description: 'Organize the issue, evidence, requested resolution, and missing information into a consistent case summary.',
-  },
-  {
-    number: '03',
-    title: 'Support the service team',
-    description: 'Prepare the case for review in the company workflow while keeping people in control of every response.',
-  },
+const cases = [
+  { id: 'TLT-2026-001', title: 'Possible duplicate charge after checkout', language: 'Japanese → English', evidence: 'Receipt attached', status: 'Needs review', tone: 'review', priority: 'Normal' },
+  { id: 'TLT-2026-002', title: 'Reservation cancellation refund request', language: 'Spanish → English', evidence: 'Email attached', status: 'Waiting for information', tone: 'waiting', priority: 'Normal' },
+  { id: 'TLT-2026-003', title: 'Incorrect room charge on final invoice', language: 'English → English', evidence: 'Invoice attached', status: 'Ready for action', tone: 'ready', priority: 'High' },
+]
+
+const stats = [
+  ['3', 'Needs review', 'review'],
+  ['2', 'Waiting for information', 'waiting'],
+  ['1', 'Ready for action', 'ready'],
+  ['4', 'In progress', 'progress'],
 ]
 
 function BusinessPage() {
   useEffect(() => {
     document.body.classList.add('business-route')
     document.title = 'Teltruva for Business'
-
-    return () => {
-      document.body.classList.remove('business-route')
-      document.title = 'Teltruva'
-    }
+    return () => document.body.classList.remove('business-route')
   }, [])
 
-  const goToConsumer = () => {
-    window.location.href = '/'
+  const openCase = (id: string) => {
+    if (id === 'TLT-2026-001') window.location.href = '/business/cases/demo'
   }
 
   return (
     <div className="business-page">
-      <header className="business-header">
-        <button className="business-brand" type="button" onClick={goToConsumer} aria-label="Go to Teltruva home">
-          <span className="business-brand-mark" aria-hidden="true">T</span>
-          <span>
-            <strong>Teltruva</strong>
-            <small>for Business</small>
-          </span>
+      <header className="workspace-header">
+        <button className="workspace-brand" type="button" onClick={() => window.location.href = '/'}>
+          <span className="workspace-brand-mark">T</span>
+          <span><strong>Teltruva</strong><small>for Business</small></span>
         </button>
-        <nav className="business-header-actions" aria-label="Business page navigation">
-          <span>Enterprise support workspace</span>
-          <button type="button" onClick={goToConsumer}>Individual service</button>
+        <p className="workspace-purpose">Multilingual customer support workspace</p>
+        <nav className="workspace-nav">
+          <button className="active" type="button">Cases</button>
+          <a href="#case-flow">How cases move</a>
+          <button type="button" onClick={() => window.location.href = '/'}>Individual service</button>
         </nav>
       </header>
 
-      <main>
-        <section className="business-hero">
-          <div className="business-hero-copy">
-            <p className="business-eyebrow">Multilingual customer support</p>
-            <h1>Turn complex customer issues into clear, actionable cases.</h1>
-            <p className="business-lead">
-              Teltruva helps service teams receive inquiries across languages, organize supporting evidence,
-              and prepare consistent case information without removing human review.
-            </p>
-            <div className="business-hero-actions">
-              <span className="business-status">Business workspace foundation</span>
-              <a href="#workflow">View planned workflow</a>
-            </div>
-          </div>
-
-          <aside className="business-preview" aria-label="Illustrative case workspace preview">
-            <div className="business-preview-top">
-              <span>Case overview</span>
-              <mark>Prepared for review</mark>
-            </div>
-            <div className="business-case-title">
-              <span className="business-case-icon" aria-hidden="true">AI</span>
-              <div>
-                <small>Multilingual inquiry</small>
-                <strong>Hotel billing issue</strong>
-              </div>
-            </div>
-            <dl className="business-case-details">
-              <div><dt>Customer language</dt><dd>Japanese</dd></div>
-              <div><dt>Service language</dt><dd>English</dd></div>
-              <div><dt>Evidence</dt><dd>Receipt attached</dd></div>
-              <div><dt>Requested outcome</dt><dd>Billing review</dd></div>
-            </dl>
-            <div className="business-review-note">
-              <span aria-hidden="true">✓</span>
-              <p><strong>Human review stays required.</strong> Nothing is sent automatically.</p>
-            </div>
-          </aside>
+      <main className="workspace-main">
+        <section className="workspace-intro">
+          <div><p className="workspace-kicker">Customer support cases</p><h1>Review what needs attention.</h1><p>Check multilingual inquiries, evidence, requested outcomes, and missing information before taking action.</p></div>
+          <button className="primary-button" type="button" onClick={() => openCase('TLT-2026-001')}>Open priority case</button>
         </section>
 
-        <section className="business-value" aria-label="Business value">
-          <article><strong>Clear intake</strong><p>Reduce ambiguity before a case reaches the service team.</p></article>
-          <article><strong>Evidence-aware</strong><p>Keep documents and extracted facts connected to the issue.</p></article>
-          <article><strong>Human controlled</strong><p>Review every case summary and response before use.</p></article>
+        <section className="status-grid" aria-label="Case status overview">
+          {stats.map(([value,label,tone]) => <article className={`status-card ${tone}`} key={label}><i /><div><strong>{value}</strong><span>{label}</span></div></article>)}
         </section>
 
-        <section className="business-workflow" id="workflow">
-          <div className="business-section-heading">
-            <p>Planned workflow</p>
-            <h2>A foundation for business support operations</h2>
-            <span>This page currently establishes the enterprise experience. Workflow integrations will be added in later phases.</span>
-          </div>
-          <div className="business-steps">
-            {workflowSteps.map((step) => (
-              <article key={step.number}>
-                <span>{step.number}</span>
-                <h3>{step.title}</h3>
-                <p>{step.description}</p>
+        <section className="case-list-section">
+          <div className="section-title"><div><p className="workspace-kicker">Cases requiring attention</p><h2>Open cases</h2></div><span>3 shown</span></div>
+          <div className="case-list">
+            {cases.map((item) => (
+              <article className="case-row" key={item.id}>
+                <div className="case-row-main"><span className={`status-dot ${item.tone}`} /><div><small>{item.id}</small><h3>{item.title}</h3></div></div>
+                <div className="case-row-meta"><span>{item.language}</span><span>{item.evidence}</span><span>Priority: {item.priority}</span></div>
+                <div className="case-row-action"><span className={`status-pill ${item.tone}`}>{item.status}</span><button type="button" disabled={item.id !== 'TLT-2026-001'} onClick={() => openCase(item.id)}>Open case</button></div>
               </article>
             ))}
           </div>
         </section>
 
-        <section className="business-roadmap">
-          <div>
-            <p>Built for responsible integration</p>
-            <h2>Designed to connect with the tools support teams already use.</h2>
-          </div>
-          <div className="business-roadmap-items">
-            <span>Case intake</span>
-            <span>Structured evidence</span>
-            <span>Team review</span>
-            <span>Workflow integration</span>
-          </div>
+        <section className="case-flow" id="case-flow">
+          <div><p className="workspace-kicker">How cases move</p><h2>A clear path from inquiry to response</h2></div>
+          <ol>
+            {['Receive','Structure','Review','Act','Respond'].map((step,index) => <li key={step}><span>{index+1}</span><strong>{step}</strong></li>)}
+          </ol>
+        </section>
+
+        <section className="trust-strip">
+          <div><strong>Human review before action</strong><span>Nothing is sent automatically.</span></div>
+          <div><strong>Evidence stays connected</strong><span>Source documents remain visible with the case.</span></div>
+          <div><strong>Languages stay distinct</strong><span>Customer and service languages are clearly identified.</span></div>
         </section>
       </main>
 
-      <footer className="business-footer">
-        <div><strong>Teltruva</strong><span>Multilingual support, structured for action.</span></div>
-        <div><span>Business experience in development</span><span>© 2026 Teltruva</span></div>
-      </footer>
+      <footer className="workspace-footer"><strong>Teltruva for Business</strong><span>Multilingual support, structured for action.</span><button type="button" onClick={() => window.location.href = '/'}>Individual service</button><span>© 2026 Teltruva</span></footer>
     </div>
   )
 }
