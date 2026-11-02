@@ -58,3 +58,11 @@
 .default-priority-dialog-icon{width:58px;height:58px;margin:0 auto 18px;display:grid;place-items:center;border-radius:50%;background:#e9efff;color:#3152bd;font-size:30px;font-weight:900}
 .default-priority-dialog .primary-dialog-button{min-width:140px;border-color:#315ee8;background:#315ee8;color:#fff}
 .default-priority-dialog .primary-dialog-button:hover{background:#284fd0}
+
+/* Status-driven dashboard summary. */
+.status-grid.status-grid-dynamic{
+  grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+}
+.status-grid-dynamic .status-card{
+  min-width:0;
+}

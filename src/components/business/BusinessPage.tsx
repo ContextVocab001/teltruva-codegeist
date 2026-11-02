@@ -1,29 +1,44 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import './business.css'
+import { loadBusinessCaseReview } from './caseReviewStorage'
+import { loadBusinessStatuses } from './statusMaster'
 
-const cases = [
-  { id: 'TLT-2026-001', title: 'Possible duplicate charge after checkout', language: 'Japanese → English', evidence: 'Receipt attached', status: 'Needs review', tone: 'review', priority: 'Normal' },
-  { id: 'TLT-2026-002', title: 'Reservation cancellation refund request', language: 'Spanish → English', evidence: 'Email attached', status: 'Waiting for information', tone: 'waiting', priority: 'Normal' },
-  { id: 'TLT-2026-003', title: 'Incorrect room charge on final invoice', language: 'English → English', evidence: 'Invoice attached', status: 'Ready for action', tone: 'ready', priority: 'High' },
-]
+const baseStatusCounts: Record<string, number> = {
+  'needs-review': 2,
+  'waiting-information': 2,
+  'ready-action': 1,
+  'in-progress': 4,
+  'resolved': 0,
+}
 
-const stats = [
-  ['3', 'Needs review', 'review'],
-  ['2', 'Waiting for information', 'waiting'],
-  ['1', 'Ready for action', 'ready'],
-  ['4', 'In progress', 'progress'],
+const sampleCases = [
+  { id: 'TLT-2026-001', title: 'Possible duplicate charge after checkout', language: 'Japanese → English', evidence: 'Receipt attached', priority: 'Urgent', route: '/business/cases/demo' },
+  { id: 'TLT-2026-002', title: 'Reservation cancellation refund request', language: 'Spanish → English', evidence: 'Email attached', priority: 'Normal', statusId: 'waiting-information' },
+  { id: 'TLT-2026-003', title: 'Incorrect room charge on final invoice', language: 'English → English', evidence: 'Invoice attached', priority: 'High', statusId: 'ready-action' },
 ]
 
 function BusinessPage() {
+  const statuses = loadBusinessStatuses()
+  const savedReview = loadBusinessCaseReview()
+  const defaultStatus = statuses.find((status) => status.isDefault && status.enabled)?.id ?? 'needs-review'
+  const demoCaseStatusId = savedReview.statusId || defaultStatus
+
+  const cases = useMemo(() => sampleCases.map((item) => ({
+    ...item,
+    statusId: item.id === 'TLT-2026-001' ? demoCaseStatusId : item.statusId,
+  })), [demoCaseStatusId])
+
+  const activeStatuses = statuses.filter((status) => status.enabled || status.id === demoCaseStatusId)
+  const statusCounts = activeStatuses.map((status) => ({
+    ...status,
+    count: (baseStatusCounts[status.id] ?? 0) + (status.id === demoCaseStatusId ? 1 : 0),
+  }))
+
   useEffect(() => {
     document.body.classList.add('business-route')
     document.title = 'Teltruva for Business'
     return () => document.body.classList.remove('business-route')
   }, [])
-
-  const openCase = (id: string) => {
-    if (id === 'TLT-2026-001') window.location.href = '/business/cases/demo'
-  }
 
   return (
     <div className="business-page">
@@ -42,32 +57,56 @@ function BusinessPage() {
 
       <main className="workspace-main">
         <section className="workspace-intro">
-          <div><p className="workspace-kicker">Customer support cases</p><h1>Review what needs attention.</h1><p>Check multilingual inquiries, evidence, requested outcomes, and missing information before taking action.</p></div>
-          <button className="primary-button" type="button" onClick={() => openCase('TLT-2026-001')}>Open priority case</button>
+          <div>
+            <p className="workspace-kicker">Customer support cases</p>
+            <h1>Review what needs attention.</h1>
+            <p>Check multilingual inquiries, evidence, requested outcomes, and missing information before taking action.</p>
+          </div>
+          <button className="primary-button" type="button" onClick={() => window.location.href = '/business/cases/demo'}>Open priority case</button>
         </section>
 
-        <section className="status-grid" aria-label="Case status overview">
-          {stats.map(([value,label,tone]) => <article className={`status-card ${tone}`} key={label}><i /><div><strong>{value}</strong><span>{label}</span></div></article>)}
+        <section className="status-grid status-grid-dynamic" aria-label="Case status overview">
+          {statusCounts.map((status) => (
+            <article className="status-card" key={status.id}>
+              <i style={{ background: status.color }} />
+              <div><strong>{status.count}</strong><span>{status.name}</span></div>
+            </article>
+          ))}
         </section>
 
         <section className="case-list-section">
-          <div className="section-title"><div><p className="workspace-kicker">Cases requiring attention</p><h2>Open cases</h2></div><span>3 shown</span></div>
+          <div className="section-title">
+            <div><p className="workspace-kicker">Cases requiring attention</p><h2>Open cases</h2></div>
+            <span>{cases.length} shown</span>
+          </div>
+
           <div className="case-list">
-            {cases.map((item) => (
-              <article className="case-row" key={item.id}>
-                <div className="case-row-main"><span className={`status-dot ${item.tone}`} /><div><small>{item.id}</small><h3>{item.title}</h3></div></div>
-                <div className="case-row-meta"><span>{item.language}</span><span>{item.evidence}</span><span>Priority: {item.priority}</span></div>
-                <div className="case-row-action"><span className={`status-pill ${item.tone}`}>{item.status}</span><button type="button" disabled={item.id !== 'TLT-2026-001'} onClick={() => openCase(item.id)}>Open case</button></div>
-              </article>
-            ))}
+            {cases.map((item) => {
+              const status = statuses.find((entry) => entry.id === item.statusId)
+              return (
+                <article className="case-row" key={item.id}>
+                  <div className="case-row-main">
+                    <span className="status-dot" style={{ background: status?.color ?? '#64748b' }} />
+                    <div><small>{item.id}</small><h3>{item.title}</h3></div>
+                  </div>
+                  <div className="case-row-meta">
+                    <span>{item.language}</span><span>{item.evidence}</span><span>Priority: {item.priority}</span>
+                  </div>
+                  <div className="case-row-action">
+                    <span className="status-pill" style={{ background: `${status?.color ?? '#64748b'}22`, color: status?.color ?? '#64748b' }}>
+                      {status?.name ?? 'Unknown status'}
+                    </span>
+                    <button type="button" disabled={!item.route} onClick={() => { if (item.route) window.location.href = item.route }}>Open case</button>
+                  </div>
+                </article>
+              )
+            })}
           </div>
         </section>
 
         <section className="case-flow" id="case-flow">
           <div><p className="workspace-kicker">How cases move</p><h2>A clear path from inquiry to response</h2></div>
-          <ol>
-            {['Receive','Structure','Review','Act','Respond'].map((step,index) => <li key={step}><span>{index+1}</span><strong>{step}</strong></li>)}
-          </ol>
+          <ol>{['Receive', 'Structure', 'Review', 'Act', 'Respond'].map((step, index) => <li key={step}><span>{index + 1}</span><strong>{step}</strong></li>)}</ol>
         </section>
 
         <section className="trust-strip">
