@@ -3,14 +3,6 @@ import './business.css'
 import { loadBusinessCaseReview } from './caseReviewStorage'
 import { loadBusinessStatuses } from './statusMaster'
 
-const baseStatusCounts: Record<string, number> = {
-  'needs-review': 2,
-  'waiting-information': 2,
-  'ready-action': 1,
-  'in-progress': 4,
-  'resolved': 0,
-}
-
 const sampleCases = [
   { id: 'TLT-2026-001', title: 'Possible duplicate charge after checkout', language: 'Japanese → English', evidence: 'Receipt attached', priority: 'Urgent', route: '/business/cases/demo' },
   { id: 'TLT-2026-002', title: 'Reservation cancellation refund request', language: 'Spanish → English', evidence: 'Email attached', priority: 'Normal', statusId: 'waiting-information' },
@@ -27,12 +19,6 @@ function BusinessCaseListPage() {
     ...item,
     statusId: item.id === 'TLT-2026-001' ? demoCaseStatusId : item.statusId,
   })), [demoCaseStatusId])
-
-  const activeStatuses = statuses.filter((status) => status.enabled || status.id === demoCaseStatusId)
-  const statusCounts = activeStatuses.map((status) => ({
-    ...status,
-    count: (baseStatusCounts[status.id] ?? 0) + (status.id === demoCaseStatusId ? 1 : 0),
-  }))
 
   useEffect(() => {
     document.body.classList.add('business-route')
