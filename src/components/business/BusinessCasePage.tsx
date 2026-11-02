@@ -4,6 +4,8 @@ import { loadBusinessCategories } from './categoryMaster'
 import { loadBusinessTeams } from './teamMaster'
 import { loadBusinessPriorities } from './priorityMaster'
 import { loadBusinessStatuses } from './statusMaster'
+import { loadBusinessTags } from './tagMaster'
+import { loadBusinessMembers } from './memberMaster'
 import { loadBusinessCaseReview, saveBusinessCaseReview } from './caseReviewStorage'
 
 function BusinessCasePage() {
@@ -11,11 +13,15 @@ function BusinessCasePage() {
   const teams = loadBusinessTeams()
   const priorities = loadBusinessPriorities()
   const statuses = loadBusinessStatuses()
+  const tags = loadBusinessTags()
+  const members = loadBusinessMembers()
   const savedReview = loadBusinessCaseReview()
   const [selectedCategory, setSelectedCategory] = useState(savedReview.categoryId)
+  const [selectedTags, setSelectedTags] = useState<string[]>(savedReview.tagIds)
   const defaultPriority = priorities.find((priority) => priority.isDefault && priority.enabled)?.id ?? priorities.find((priority) => priority.enabled)?.id ?? ''
   const [selectedPriority, setSelectedPriority] = useState(savedReview.priorityId || defaultPriority)
   const [selectedTeam, setSelectedTeam] = useState(savedReview.assignedTeamId)
+  const [selectedAssignee, setSelectedAssignee] = useState(savedReview.assigneeId)
   const defaultStatus = statuses.find((status) => status.isDefault && status.enabled)?.id ?? statuses.find((status) => status.enabled)?.id ?? ''
   const [selectedStatus, setSelectedStatus] = useState(savedReview.statusId || defaultStatus)
   const [saveMessage, setSaveMessage] = useState('')
@@ -24,9 +30,17 @@ function BusinessCasePage() {
     () => categories.filter((category) => category.enabled || category.id === selectedCategory),
     [categories, selectedCategory]
   )
+  const tagOptions = useMemo(
+    () => tags.filter((tag) => tag.enabled && !selectedTags.includes(tag.id)),
+    [tags, selectedTags]
+  )
   const teamOptions = useMemo(
     () => teams.filter((team) => team.enabled || team.id === selectedTeam),
     [teams, selectedTeam]
+  )
+  const assigneeOptions = useMemo(
+    () => members.filter((member) => member.teamId === selectedTeam && (member.enabled || member.id === selectedAssignee)),
+    [members, selectedTeam, selectedAssignee]
   )
   const priorityOptions = useMemo(
     () => priorities.filter((priority) => priority.enabled || priority.id === selectedPriority),
@@ -39,6 +53,7 @@ function BusinessCasePage() {
 
   const selectedCategoryRecord = categories.find((category) => category.id === selectedCategory)
   const selectedTeamRecord = teams.find((team) => team.id === selectedTeam)
+  const selectedAssigneeRecord = members.find((member) => member.id === selectedAssignee)
   const selectedPriorityRecord = priorities.find((priority) => priority.id === selectedPriority)
   const selectedStatusRecord = statuses.find((status) => status.id === selectedStatus)
 
@@ -58,13 +73,20 @@ function BusinessCasePage() {
       return
     }
 
+    if (!selectedAssignee) {
+      setSaveMessage('Select an assignee before saving the review.')
+      return
+    }
+
     saveBusinessCaseReview({
       categoryId: selectedCategory,
+      tagIds: selectedTags,
       priorityId: selectedPriority,
       assignedTeamId: selectedTeam,
+      assigneeId: selectedAssignee,
       statusId: selectedStatus,
     })
-    setSaveMessage('Category, priority, assigned team, and status saved in this browser demo.')
+    setSaveMessage('Category, tags, priority, assigned team, assignee, and status saved in this browser demo.')
   }
 
   return (
@@ -109,6 +131,26 @@ function BusinessCasePage() {
             </label>
             {selectedCategoryRecord && !selectedCategoryRecord.enabled && <p className="disabled-category-notice">This category is disabled for new selections, but remains on this previously saved case.</p>}
 
+            <div className="case-tags-field">
+              <span className="case-field-label">Tags</span>
+              <div className="selected-tag-list" aria-label="Selected tags">
+                {selectedTags.length === 0 && <span className="empty-tag-message">No tags selected</span>}
+                {selectedTags.map((tagId) => {
+                  const tag = tags.find((item) => item.id === tagId)
+                  return (
+                    <span className={tag?.enabled === false ? 'case-tag disabled' : 'case-tag'} key={tagId}>
+                      {tag?.name ?? 'Deleted tag'}{tag?.enabled === false ? ' (disabled)' : ''}
+                      <button type="button" aria-label={`Remove ${tag?.name ?? 'tag'}`} onClick={() => { setSelectedTags((current) => current.filter((id) => id !== tagId)); setSaveMessage('') }}>×</button>
+                    </span>
+                  )
+                })}
+              </div>
+              <select value="" onChange={(event) => { if (event.target.value) setSelectedTags((current) => [...current, event.target.value]); setSaveMessage('') }}>
+                <option value="">Select another tag</option>
+                {tagOptions.map((tag) => <option key={tag.id} value={tag.id}>{tag.name}</option>)}
+              </select>
+            </div>
+
             <label>Priority
               <select value={selectedPriority} onChange={(event) => { setSelectedPriority(event.target.value); setSaveMessage('') }}>
                 <option value="" disabled>Select priority</option>
@@ -118,12 +160,20 @@ function BusinessCasePage() {
             {selectedPriorityRecord && !selectedPriorityRecord.enabled && <p className="disabled-category-notice">This priority is disabled for new selections, but remains on this previously saved case.</p>}
 
             <label>Assigned team
-              <select value={selectedTeam} onChange={(event) => { setSelectedTeam(event.target.value); setSaveMessage('') }}>
+              <select value={selectedTeam} onChange={(event) => { setSelectedTeam(event.target.value); if (selectedAssigneeRecord?.teamId !== event.target.value) setSelectedAssignee(''); setSaveMessage('') }}>
                 <option value="" disabled>Select team</option>
                 {teamOptions.map((team) => <option key={team.id} value={team.id}>{team.name}{team.enabled ? '' : ' (disabled)'}</option>)}
               </select>
             </label>
             {selectedTeamRecord && !selectedTeamRecord.enabled && <p className="disabled-category-notice">This team is disabled for new assignments, but remains on this previously saved case.</p>}
+
+            <label>Assignee
+              <select value={selectedAssignee} disabled={!selectedTeam} onChange={(event) => { setSelectedAssignee(event.target.value); setSaveMessage('') }}>
+                <option value="" disabled>{selectedTeam ? 'Select assignee' : 'Select a team first'}</option>
+                {assigneeOptions.map((member) => <option key={member.id} value={member.id}>{member.name}{member.enabled ? '' : ' (disabled)'}</option>)}
+              </select>
+            </label>
+            {selectedAssigneeRecord && !selectedAssigneeRecord.enabled && <p className="disabled-category-notice">This member is disabled for new assignments, but remains on this previously saved case.</p>}
 
             <label>Status
               <select value={selectedStatus} onChange={(event) => { setSelectedStatus(event.target.value); setSaveMessage('') }}>
@@ -133,7 +183,7 @@ function BusinessCasePage() {
             </label>
             {selectedStatusRecord && !selectedStatusRecord.enabled && <p className="disabled-category-notice">This status is disabled for new selections, but remains on this previously saved case.</p>}
 
-            <div className="human-note"><b>✓</b><p><strong>Human review required.</strong> Teltruva does not choose the company category, priority, or assigned team.</p></div>
+            <div className="human-note"><b>✓</b><p><strong>Human review required.</strong> Teltruva does not choose the company category, priority, assigned team, or assignee.</p></div>
             <button className="primary-button full" type="button" onClick={saveReview}>Save review</button>
             {saveMessage && <p className="case-save-message" aria-live="polite">{saveMessage}</p>}
           </aside>

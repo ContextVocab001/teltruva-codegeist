@@ -7,6 +7,7 @@ import './App.css'
 import PaymentModal from './components/payment/PaymentModal'
 import ProcessingOverlay from './components/processing/ProcessingOverlay'
 import BusinessPage from './components/business/BusinessPage'
+import BusinessCaseListPage from './components/business/BusinessCaseListPage'
 import BusinessCasePage from './components/business/BusinessCasePage'
 import BusinessSettingsPage from './components/business/BusinessSettingsPage'
 import type { CaptureOrderResponse } from './types/payment'
@@ -587,7 +588,12 @@ function ConsumerApp() {
   const header = (
     <header className="header"><div className="header-inner">
       <button className="brand brand-button" onClick={startNewCase}><div className="brand-icon">T</div><div><p className="brand-name">Teltruva</p><p className="brand-tagline">{t.tagline}</p></div></button>
-      <select className="language-select" value={language} onChange={e=>changeLanguage(e.target.value as Lang)}>{uiOptions.map(o=><option value={o.value} key={o.value}>{o.label}</option>)}</select>
+      <div className="consumer-header-actions">
+        <button className="business-switch-button" type="button" onClick={()=>window.location.href='/business'}>
+          {ui({ en:'For Business', ja:'企業向け', es:'Para empresas' })}
+        </button>
+        <select className="language-select" value={language} onChange={e=>changeLanguage(e.target.value as Lang)}>{uiOptions.map(o=><option value={o.value} key={o.value}>{o.label}</option>)}</select>
+      </div>
     </div></header>
   )
 
@@ -669,6 +675,7 @@ function ConsumerApp() {
 function App() {
   const normalizedPath = (window.location.pathname.replace(/\/+$/, '') || '/').toLowerCase()
   if (normalizedPath === '/business') return <BusinessPage />
+  if (normalizedPath === '/business/cases') return <BusinessCaseListPage />
   if (normalizedPath === '/business/cases/demo') return <BusinessCasePage />
   if (normalizedPath === '/business/settings') return <BusinessSettingsPage />
   return <ConsumerApp />

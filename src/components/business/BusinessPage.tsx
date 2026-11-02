@@ -76,18 +76,19 @@ function BusinessPage() {
 
         <section className="case-list-section">
           <div className="section-title">
-            <div><p className="workspace-kicker">Cases requiring attention</p><h2>Open cases</h2></div>
-            <span>{cases.length} shown</span>
+            <div><p className="workspace-kicker">Cases requiring attention</p><h2>Priority preview</h2></div>
+            <button className="view-all-cases-button" type="button" onClick={() => window.location.href = '/business/cases'}>View all cases</button>
           </div>
 
-          <div className="case-list">
-            {cases.map((item) => {
+          <p className="case-preview-note">Showing a short preview of cases that currently need attention.</p>
+          <div className="case-list case-preview-list">
+            {cases.slice(0, 2).map((item) => {
               const status = statuses.find((entry) => entry.id === item.statusId)
               return (
                 <article className="case-row" key={item.id}>
                   <div className="case-row-main">
                     <span className="status-dot" style={{ background: status?.color ?? '#64748b' }} />
-                    <div><small>{item.id}</small><h3>{item.title}</h3></div>
+                    <div><small>{item.id}</small><h3 title={item.title}>{item.title}</h3></div>
                   </div>
                   <div className="case-row-meta">
                     <span>{item.language}</span><span>{item.evidence}</span><span>Priority: {item.priority}</span>
