@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react'
 import './business.css'
-import {
-  loadBusinessCategories,
-  saveBusinessCategories,
-  type BusinessCategory,
-} from './categoryMaster'
+import { loadBusinessCategories, saveBusinessCategories, type BusinessCategory } from './categoryMaster'
+import { loadBusinessTeams, saveBusinessTeams, type BusinessTeam } from './teamMaster'
+
+type SettingsSection = 'categories' | 'teams'
+type DeletableMaster = { kind: SettingsSection; id: string; name: string }
 
 function BusinessSettingsPage() {
+  const [section, setSection] = useState<SettingsSection>('categories')
   const [categories, setCategories] = useState<BusinessCategory[]>(() => loadBusinessCategories())
-  const [newCategory, setNewCategory] = useState('')
+  const [teams, setTeams] = useState<BusinessTeam[]>(() => loadBusinessTeams())
+  const [newValue, setNewValue] = useState('')
   const [message, setMessage] = useState('')
-  const [categoryToDelete, setCategoryToDelete] = useState<BusinessCategory | null>(null)
+  const [itemToDelete, setItemToDelete] = useState<DeletableMaster | null>(null)
 
   useEffect(() => {
     document.body.classList.add('business-route')
@@ -18,161 +20,125 @@ function BusinessSettingsPage() {
     return () => document.body.classList.remove('business-route')
   }, [])
 
-  const updateCategories = (nextCategories: BusinessCategory[], successMessage: string) => {
-    setCategories(nextCategories)
-    saveBusinessCategories(nextCategories)
-    setMessage(successMessage)
+  const switchSection = (nextSection: SettingsSection) => {
+    setSection(nextSection)
+    setNewValue('')
+    setMessage('')
   }
 
-  const addCategory = () => {
-    const name = newCategory.trim()
+  const addValue = () => {
+    const name = newValue.trim()
     if (!name) {
-      setMessage('Enter a category name.')
-      return
-    }
-    if (categories.some((category) => category.name.toLowerCase() === name.toLowerCase())) {
-      setMessage('That category already exists.')
+      setMessage(`Enter a ${section === 'categories' ? 'category' : 'team'} name.`)
       return
     }
 
-    const nextCategories = [
-      ...categories,
-      {
-        id: `custom-${Date.now()}`,
-        name,
-        enabled: true,
-        deletable: true,
-      },
-    ]
-    updateCategories(nextCategories, 'Category added and made available for case review.')
-    setNewCategory('')
+    if (section === 'categories') {
+      if (categories.some((item) => item.name.toLowerCase() === name.toLowerCase())) {
+        setMessage('That category already exists.')
+        return
+      }
+      const next = [...categories, { id: `custom-${Date.now()}`, name, enabled: true, deletable: true }]
+      setCategories(next)
+      saveBusinessCategories(next)
+      setMessage('Category added and made available for case review.')
+    } else {
+      if (teams.some((item) => item.name.toLowerCase() === name.toLowerCase())) {
+        setMessage('That team already exists.')
+        return
+      }
+      const next = [...teams, { id: `custom-${Date.now()}`, name, enabled: true, deletable: true }]
+      setTeams(next)
+      saveBusinessTeams(next)
+      setMessage('Team added and made available for case assignment.')
+    }
+    setNewValue('')
   }
 
   const toggleCategory = (id: string) => {
-    const nextCategories = categories.map((category) =>
-      category.id === id ? { ...category, enabled: !category.enabled } : category
-    )
-    updateCategories(nextCategories, 'Category availability updated.')
+    const next = categories.map((item) => item.id === id ? { ...item, enabled: !item.enabled } : item)
+    setCategories(next)
+    saveBusinessCategories(next)
+    setMessage('Category availability updated.')
   }
 
-  const requestDeleteCategory = (category: BusinessCategory) => {
-    if (!category.deletable) return
-    setCategoryToDelete(category)
+  const toggleTeam = (id: string) => {
+    const next = teams.map((item) => item.id === id ? { ...item, enabled: !item.enabled } : item)
+    setTeams(next)
+    saveBusinessTeams(next)
+    setMessage('Team availability updated.')
   }
 
-  const confirmDeleteCategory = () => {
-    if (!categoryToDelete) return
-    const nextCategories = categories.filter((category) => category.id !== categoryToDelete.id)
-    updateCategories(nextCategories, 'Category deleted from this browser demo.')
-    setCategoryToDelete(null)
+  const confirmDelete = () => {
+    if (!itemToDelete) return
+    if (itemToDelete.kind === 'categories') {
+      const next = categories.filter((item) => item.id !== itemToDelete.id)
+      setCategories(next)
+      saveBusinessCategories(next)
+      setMessage('Category deleted from this browser demo.')
+    } else {
+      const next = teams.filter((item) => item.id !== itemToDelete.id)
+      setTeams(next)
+      saveBusinessTeams(next)
+      setMessage('Team deleted from this browser demo.')
+    }
+    setItemToDelete(null)
   }
+
+  const isCategories = section === 'categories'
+  const values = isCategories ? categories : teams
+  const activeCount = values.filter((item) => item.enabled).length
+  const singular = isCategories ? 'category' : 'team'
 
   return (
     <div className="business-page">
       <header className="workspace-header">
-        <button className="workspace-brand" type="button" onClick={() => window.location.href = '/business'}>
-          <span className="workspace-brand-mark">T</span>
-          <span><strong>Teltruva</strong><small>for Business</small></span>
-        </button>
+        <button className="workspace-brand" type="button" onClick={() => window.location.href = '/business'}><span className="workspace-brand-mark">T</span><span><strong>Teltruva</strong><small>for Business</small></span></button>
         <p className="workspace-purpose">Business settings</p>
-        <nav className="workspace-nav">
-          <button type="button" onClick={() => window.location.href = '/business/cases/demo'}>← Back to case</button>
-          <button type="button" onClick={() => window.location.href = '/business'}>All cases</button>
-        </nav>
+        <nav className="workspace-nav"><button type="button" onClick={() => window.location.href = '/business/cases/demo'}>← Back to case</button><button type="button" onClick={() => window.location.href = '/business'}>All cases</button></nav>
       </header>
 
       <main className="workspace-main settings-main">
-        <section className="settings-heading">
-          <div>
-            <p className="workspace-kicker">Company-managed fields</p>
-            <h1>Business settings</h1>
-            <p>Maintain the approved values that support specialists can select when reviewing a case.</p>
-          </div>
-          <span className="demo-badge">Browser demo storage</span>
-        </section>
+        <section className="settings-heading"><div><p className="workspace-kicker">Company-managed fields</p><h1>Business settings</h1><p>Maintain the approved values that support specialists can select when reviewing a case.</p></div><span className="demo-badge">Browser demo storage</span></section>
 
         <div className="settings-layout">
           <nav className="settings-nav" aria-label="Business settings sections">
-            <button className="active" type="button">Categories</button>
+            <button className={isCategories ? 'active' : ''} type="button" onClick={() => switchSection('categories')}>Categories</button>
             <button type="button" disabled>Tags <span>Later</span></button>
             <button type="button" disabled>Priorities <span>Later</span></button>
-            <button type="button" disabled>Teams <span>Later</span></button>
+            <button className={!isCategories ? 'active' : ''} type="button" onClick={() => switchSection('teams')}>Teams</button>
             <button type="button" disabled>Members <span>Later</span></button>
             <button type="button" disabled>Statuses <span>Later</span></button>
           </nav>
 
-          <section className="master-panel" aria-labelledby="category-master-heading">
-            <div className="master-panel-heading">
-              <div><p>Category master</p><h2 id="category-master-heading">Categories</h2></div>
-              <span>{categories.filter((category) => category.enabled).length} active</span>
-            </div>
-
-            <p className="master-description">Categories are selected by support specialists. Teltruva does not assign them automatically.</p>
+          <section className="master-panel">
+            <div className="master-panel-heading"><div><p>{isCategories ? 'Category master' : 'Team master'}</p><h2>{isCategories ? 'Categories' : 'Teams'}</h2></div><span>{activeCount} active</span></div>
+            <p className="master-description">{isCategories ? 'Categories are selected by support specialists. Teltruva does not assign them automatically.' : 'Teams are selected by support specialists. Teltruva does not assign cases automatically.'}</p>
 
             <div className="add-master-value">
-              <label htmlFor="new-category">New category</label>
-              <div>
-                <input
-                  id="new-category"
-                  value={newCategory}
-                  onChange={(event) => setNewCategory(event.target.value)}
-                  onKeyDown={(event) => { if (event.key === 'Enter') addCategory() }}
-                  placeholder="Enter category name"
-                />
-                <button type="button" onClick={addCategory}>Add category</button>
-              </div>
+              <label htmlFor="new-master-value">New {singular}</label>
+              <div><input id="new-master-value" value={newValue} onChange={(event) => setNewValue(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') addValue() }} placeholder={`Enter ${singular} name`} /><button type="button" onClick={addValue}>Add {singular}</button></div>
               {message && <p aria-live="polite">{message}</p>}
             </div>
 
             <div className="master-list" role="list">
-              {categories.map((category) => (
-                <article className={category.enabled ? '' : 'disabled'} key={category.id} role="listitem">
-                  <div>
-                    <strong>{category.name}</strong>
-                    <span>{category.enabled ? 'Available for case review' : 'Disabled for new selections'}</span>
-                  </div>
+              {values.map((item) => (
+                <article className={item.enabled ? '' : 'disabled'} key={item.id} role="listitem">
+                  <div><strong>{item.name}</strong><span>{item.enabled ? `Available for case ${isCategories ? 'review' : 'assignment'}` : `Disabled for new ${isCategories ? 'selections' : 'assignments'}`}</span></div>
                   <div className="master-actions">
-                    <button type="button" onClick={() => toggleCategory(category.id)}>
-                      {category.enabled ? 'Disable' : 'Enable'}
-                    </button>
-                    {category.deletable && (
-                      <button className="delete-master-button" type="button" onClick={() => requestDeleteCategory(category)}>
-                        Delete
-                      </button>
-                    )}
+                    <button type="button" onClick={() => isCategories ? toggleCategory(item.id) : toggleTeam(item.id)}>{item.enabled ? 'Disable' : 'Enable'}</button>
+                    {item.deletable && <button className="delete-master-button" type="button" onClick={() => setItemToDelete({ kind: section, id: item.id, name: item.name })}>Delete</button>}
                   </div>
                 </article>
               ))}
             </div>
 
-            <div className="settings-note">
-              <strong>Demo storage</strong>
-              <p>Changes are stored only in this browser. Company accounts, administrator permissions, and permanent shared storage will be added later.</p>
-            </div>
+            <div className="settings-note"><strong>Demo storage</strong><p>Changes are stored only in this browser. Company accounts, administrator permissions, and permanent shared storage will be added later.</p></div>
           </section>
         </div>
       </main>
 
-      {categoryToDelete && (
-        <div className="delete-dialog-backdrop" role="presentation" onMouseDown={() => setCategoryToDelete(null)}>
-          <section
-            className="delete-dialog"
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="delete-dialog-title"
-            aria-describedby="delete-dialog-description"
-            onMouseDown={(event) => event.stopPropagation()}
-          >
-            <div className="delete-dialog-icon" aria-hidden="true">!</div>
-            <h2 id="delete-dialog-title">Delete “{categoryToDelete.name}”?</h2>
-            <p id="delete-dialog-description">This demo category has not been used in any cases. This action cannot be undone.</p>
-            <div className="delete-dialog-actions">
-              <button type="button" onClick={() => setCategoryToDelete(null)}>Cancel</button>
-              <button className="confirm-delete-button" type="button" onClick={confirmDeleteCategory}>Delete category</button>
-            </div>
-          </section>
-        </div>
-      )}
+      {itemToDelete && <div className="delete-dialog-backdrop" role="presentation" onMouseDown={() => setItemToDelete(null)}><section className="delete-dialog" role="alertdialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}><div className="delete-dialog-icon">!</div><h2>Delete “{itemToDelete.name}”?</h2><p>This demo {itemToDelete.kind === 'categories' ? 'category' : 'team'} has not been used in any cases. This action cannot be undone.</p><div className="delete-dialog-actions"><button type="button" onClick={() => setItemToDelete(null)}>Cancel</button><button className="confirm-delete-button" type="button" onClick={confirmDelete}>Delete {itemToDelete.kind === 'categories' ? 'category' : 'team'}</button></div></section></div>}
     </div>
   )
 }

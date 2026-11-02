@@ -1,20 +1,29 @@
 import { useEffect, useMemo, useState } from 'react'
 import './business.css'
 import { loadBusinessCategories } from './categoryMaster'
+import { loadBusinessTeams } from './teamMaster'
 import { loadBusinessCaseReview, saveBusinessCaseReview } from './caseReviewStorage'
 
 function BusinessCasePage() {
   const categories = loadBusinessCategories()
+  const teams = loadBusinessTeams()
   const savedReview = loadBusinessCaseReview()
   const [selectedCategory, setSelectedCategory] = useState(savedReview.categoryId)
   const [selectedPriority, setSelectedPriority] = useState(savedReview.priority)
+  const [selectedTeam, setSelectedTeam] = useState(savedReview.assignedTeamId)
   const [saveMessage, setSaveMessage] = useState('')
 
-  const categoryOptions = useMemo(() => {
-    return categories.filter((category) => category.enabled || category.id === selectedCategory)
-  }, [categories, selectedCategory])
+  const categoryOptions = useMemo(
+    () => categories.filter((category) => category.enabled || category.id === selectedCategory),
+    [categories, selectedCategory]
+  )
+  const teamOptions = useMemo(
+    () => teams.filter((team) => team.enabled || team.id === selectedTeam),
+    [teams, selectedTeam]
+  )
 
   const selectedCategoryRecord = categories.find((category) => category.id === selectedCategory)
+  const selectedTeamRecord = teams.find((team) => team.id === selectedTeam)
 
   useEffect(() => {
     document.body.classList.add('business-route')
@@ -27,12 +36,17 @@ function BusinessCasePage() {
       setSaveMessage('Select a category before saving the review.')
       return
     }
+    if (!selectedTeam) {
+      setSaveMessage('Select an assigned team before saving the review.')
+      return
+    }
 
     saveBusinessCaseReview({
       categoryId: selectedCategory,
       priority: selectedPriority,
+      assignedTeamId: selectedTeam,
     })
-    setSaveMessage('Category and priority saved in this browser demo.')
+    setSaveMessage('Category, priority, and assigned team saved in this browser demo.')
   }
 
   return (
@@ -57,92 +71,41 @@ function BusinessCasePage() {
 
         <article className="case-detail-card">
           <section className="case-detail-content">
-            <div className="case-title">
-              <span>AI</span>
-              <div><small>Hotel billing issue</small><h2>Possible duplicate charge after checkout</h2></div>
-            </div>
-            <div className="summary-box">
-              <h3>Issue summary</h3>
-              <p>The customer reports a charge that may duplicate an amount already included in the hotel receipt and asks the billing team to review it.</p>
-            </div>
-            <div className="information-grid">
-              <div><span>Customer language</span><strong>Japanese</strong></div>
-              <div><span>Service language</span><strong>English</strong></div>
-              <div><span>Supporting evidence</span><strong>Hotel receipt</strong></div>
-              <div><span>Requested outcome</span><strong>Billing review</strong></div>
-            </div>
-            <div className="missing-box">
-              <b>!</b>
-              <div><strong>Missing information</strong><p>Confirm whether the pending card charge has posted before the case is sent for action.</p></div>
-            </div>
+            <div className="case-title"><span>AI</span><div><small>Hotel billing issue</small><h2>Possible duplicate charge after checkout</h2></div></div>
+            <div className="summary-box"><h3>Issue summary</h3><p>The customer reports a charge that may duplicate an amount already included in the hotel receipt and asks the billing team to review it.</p></div>
+            <div className="information-grid"><div><span>Customer language</span><strong>Japanese</strong></div><div><span>Service language</span><strong>English</strong></div><div><span>Supporting evidence</span><strong>Hotel receipt</strong></div><div><span>Requested outcome</span><strong>Billing review</strong></div></div>
+            <div className="missing-box"><b>!</b><div><strong>Missing information</strong><p>Confirm whether the pending card charge has posted before the case is sent for action.</p></div></div>
           </section>
 
           <aside className="decision-panel">
             <div className="decision-heading">
-              <div>
-                <h2>Company review</h2>
-                <button className="manage-master-link" type="button" onClick={() => window.location.href = '/business/settings'}>
-                  Manage categories
-                </button>
-              </div>
+              <div><h2>Company review</h2><button className="manage-master-link" type="button" onClick={() => window.location.href = '/business/settings'}>Manage master data</button></div>
               <span>Company-managed fields</span>
             </div>
 
-            <label>
-              Category
-              <select
-                value={selectedCategory}
-                onChange={(event) => {
-                  setSelectedCategory(event.target.value)
-                  setSaveMessage('')
-                }}
-              >
+            <label>Category
+              <select value={selectedCategory} onChange={(event) => { setSelectedCategory(event.target.value); setSaveMessage('') }}>
                 <option value="" disabled>Select category</option>
-                {categoryOptions.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}{category.enabled ? '' : ' (disabled)'}
-                  </option>
-                ))}
+                {categoryOptions.map((category) => <option key={category.id} value={category.id}>{category.name}{category.enabled ? '' : ' (disabled)'}</option>)}
+              </select>
+            </label>
+            {selectedCategoryRecord && !selectedCategoryRecord.enabled && <p className="disabled-category-notice">This category is disabled for new selections, but remains on this previously saved case.</p>}
+
+            <label>Priority
+              <select value={selectedPriority} onChange={(event) => { setSelectedPriority(event.target.value); setSaveMessage('') }}>
+                <option value="low">Low</option><option value="normal">Normal</option><option value="high">High</option><option value="urgent">Urgent</option>
               </select>
             </label>
 
-            {selectedCategoryRecord && !selectedCategoryRecord.enabled && (
-              <p className="disabled-category-notice">
-                This category is disabled for new selections, but remains on this previously saved case.
-              </p>
-            )}
-
-            <label>
-              Priority
-              <select
-                value={selectedPriority}
-                onChange={(event) => {
-                  setSelectedPriority(event.target.value)
-                  setSaveMessage('')
-                }}
-              >
-                <option value="low">Low</option>
-                <option value="normal">Normal</option>
-                <option value="high">High</option>
-                <option value="urgent">Urgent</option>
-              </select>
-            </label>
-
-            <label>
-              Assigned team
-              <select defaultValue="">
+            <label>Assigned team
+              <select value={selectedTeam} onChange={(event) => { setSelectedTeam(event.target.value); setSaveMessage('') }}>
                 <option value="" disabled>Select team</option>
-                <option>Billing team</option>
-                <option>Customer care</option>
-                <option>Hotel operations</option>
+                {teamOptions.map((team) => <option key={team.id} value={team.id}>{team.name}{team.enabled ? '' : ' (disabled)'}</option>)}
               </select>
             </label>
+            {selectedTeamRecord && !selectedTeamRecord.enabled && <p className="disabled-category-notice">This team is disabled for new assignments, but remains on this previously saved case.</p>}
 
-            <div className="human-note">
-              <b>✓</b>
-              <p><strong>Human review required.</strong> Teltruva does not choose the company category, priority, or assignee.</p>
-            </div>
-
+            <div className="human-note"><b>✓</b><p><strong>Human review required.</strong> Teltruva does not choose the company category, priority, or assigned team.</p></div>
             <button className="primary-button full" type="button" onClick={saveReview}>Save review</button>
             {saveMessage && <p className="case-save-message" aria-live="polite">{saveMessage}</p>}
           </aside>
