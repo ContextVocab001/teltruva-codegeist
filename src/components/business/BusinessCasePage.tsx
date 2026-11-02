@@ -3,17 +3,21 @@ import './business.css'
 import { loadBusinessCategories } from './categoryMaster'
 import { loadBusinessTeams } from './teamMaster'
 import { loadBusinessPriorities } from './priorityMaster'
+import { loadBusinessStatuses } from './statusMaster'
 import { loadBusinessCaseReview, saveBusinessCaseReview } from './caseReviewStorage'
 
 function BusinessCasePage() {
   const categories = loadBusinessCategories()
   const teams = loadBusinessTeams()
   const priorities = loadBusinessPriorities()
+  const statuses = loadBusinessStatuses()
   const savedReview = loadBusinessCaseReview()
   const [selectedCategory, setSelectedCategory] = useState(savedReview.categoryId)
   const defaultPriority = priorities.find((priority) => priority.isDefault && priority.enabled)?.id ?? priorities.find((priority) => priority.enabled)?.id ?? ''
   const [selectedPriority, setSelectedPriority] = useState(savedReview.priorityId || defaultPriority)
   const [selectedTeam, setSelectedTeam] = useState(savedReview.assignedTeamId)
+  const defaultStatus = statuses.find((status) => status.isDefault && status.enabled)?.id ?? statuses.find((status) => status.enabled)?.id ?? ''
+  const [selectedStatus, setSelectedStatus] = useState(savedReview.statusId || defaultStatus)
   const [saveMessage, setSaveMessage] = useState('')
 
   const categoryOptions = useMemo(
@@ -28,10 +32,15 @@ function BusinessCasePage() {
     () => priorities.filter((priority) => priority.enabled || priority.id === selectedPriority),
     [priorities, selectedPriority]
   )
+  const statusOptions = useMemo(
+    () => statuses.filter((status) => status.enabled || status.id === selectedStatus),
+    [statuses, selectedStatus]
+  )
 
   const selectedCategoryRecord = categories.find((category) => category.id === selectedCategory)
   const selectedTeamRecord = teams.find((team) => team.id === selectedTeam)
   const selectedPriorityRecord = priorities.find((priority) => priority.id === selectedPriority)
+  const selectedStatusRecord = statuses.find((status) => status.id === selectedStatus)
 
   useEffect(() => {
     document.body.classList.add('business-route')
@@ -53,8 +62,9 @@ function BusinessCasePage() {
       categoryId: selectedCategory,
       priorityId: selectedPriority,
       assignedTeamId: selectedTeam,
+      statusId: selectedStatus,
     })
-    setSaveMessage('Category, priority, and assigned team saved in this browser demo.')
+    setSaveMessage('Category, priority, assigned team, and status saved in this browser demo.')
   }
 
   return (
@@ -74,7 +84,7 @@ function BusinessCasePage() {
       <main className="workspace-main case-page-main">
         <div className="case-page-heading">
           <div><p className="workspace-kicker">Priority case</p><h1>Case TLT-2026-001</h1></div>
-          <span className="status-pill review">Needs review</span>
+          <span className="status-pill" style={{ background: `${selectedStatusRecord?.color ?? '#7147de'}22`, color: selectedStatusRecord?.color ?? '#7147de' }}>{selectedStatusRecord?.name ?? 'Status'}</span>
         </div>
 
         <article className="case-detail-card">
@@ -114,6 +124,14 @@ function BusinessCasePage() {
               </select>
             </label>
             {selectedTeamRecord && !selectedTeamRecord.enabled && <p className="disabled-category-notice">This team is disabled for new assignments, but remains on this previously saved case.</p>}
+
+            <label>Status
+              <select value={selectedStatus} onChange={(event) => { setSelectedStatus(event.target.value); setSaveMessage('') }}>
+                <option value="" disabled>Select status</option>
+                {statusOptions.map((status) => <option key={status.id} value={status.id}>{status.name}{status.enabled ? '' : ' (disabled)'}</option>)}
+              </select>
+            </label>
+            {selectedStatusRecord && !selectedStatusRecord.enabled && <p className="disabled-category-notice">This status is disabled for new selections, but remains on this previously saved case.</p>}
 
             <div className="human-note"><b>✓</b><p><strong>Human review required.</strong> Teltruva does not choose the company category, priority, or assigned team.</p></div>
             <button className="primary-button full" type="button" onClick={saveReview}>Save review</button>
