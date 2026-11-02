@@ -47,3 +47,14 @@
   font-size:16px;
   line-height:1.5;
 }
+
+/* Priority master indicators. */
+.master-name-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.priority-color-dot{width:13px;height:13px;flex:0 0 auto;border-radius:50%;box-shadow:0 0 0 3px rgba(70,90,130,.08)}
+.default-priority-badge{margin-top:0!important;padding:4px 8px;border-radius:999px;background:#e8efff;color:#3152bd!important;font-size:14px!important;font-weight:850}
+.master-item-copy>span{margin-top:4px}
+
+/* Centered notice for protected default priority. */
+.default-priority-dialog-icon{width:58px;height:58px;margin:0 auto 18px;display:grid;place-items:center;border-radius:50%;background:#e9efff;color:#3152bd;font-size:30px;font-weight:900}
+.default-priority-dialog .primary-dialog-button{min-width:140px;border-color:#315ee8;background:#315ee8;color:#fff}
+.default-priority-dialog .primary-dialog-button:hover{background:#284fd0}

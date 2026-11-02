@@ -2,14 +2,17 @@ import { useEffect, useMemo, useState } from 'react'
 import './business.css'
 import { loadBusinessCategories } from './categoryMaster'
 import { loadBusinessTeams } from './teamMaster'
+import { loadBusinessPriorities } from './priorityMaster'
 import { loadBusinessCaseReview, saveBusinessCaseReview } from './caseReviewStorage'
 
 function BusinessCasePage() {
   const categories = loadBusinessCategories()
   const teams = loadBusinessTeams()
+  const priorities = loadBusinessPriorities()
   const savedReview = loadBusinessCaseReview()
   const [selectedCategory, setSelectedCategory] = useState(savedReview.categoryId)
-  const [selectedPriority, setSelectedPriority] = useState(savedReview.priority)
+  const defaultPriority = priorities.find((priority) => priority.isDefault && priority.enabled)?.id ?? priorities.find((priority) => priority.enabled)?.id ?? ''
+  const [selectedPriority, setSelectedPriority] = useState(savedReview.priorityId || defaultPriority)
   const [selectedTeam, setSelectedTeam] = useState(savedReview.assignedTeamId)
   const [saveMessage, setSaveMessage] = useState('')
 
@@ -21,9 +24,14 @@ function BusinessCasePage() {
     () => teams.filter((team) => team.enabled || team.id === selectedTeam),
     [teams, selectedTeam]
   )
+  const priorityOptions = useMemo(
+    () => priorities.filter((priority) => priority.enabled || priority.id === selectedPriority),
+    [priorities, selectedPriority]
+  )
 
   const selectedCategoryRecord = categories.find((category) => category.id === selectedCategory)
   const selectedTeamRecord = teams.find((team) => team.id === selectedTeam)
+  const selectedPriorityRecord = priorities.find((priority) => priority.id === selectedPriority)
 
   useEffect(() => {
     document.body.classList.add('business-route')
@@ -43,7 +51,7 @@ function BusinessCasePage() {
 
     saveBusinessCaseReview({
       categoryId: selectedCategory,
-      priority: selectedPriority,
+      priorityId: selectedPriority,
       assignedTeamId: selectedTeam,
     })
     setSaveMessage('Category, priority, and assigned team saved in this browser demo.')
@@ -93,9 +101,11 @@ function BusinessCasePage() {
 
             <label>Priority
               <select value={selectedPriority} onChange={(event) => { setSelectedPriority(event.target.value); setSaveMessage('') }}>
-                <option value="low">Low</option><option value="normal">Normal</option><option value="high">High</option><option value="urgent">Urgent</option>
+                <option value="" disabled>Select priority</option>
+                {priorityOptions.map((priority) => <option key={priority.id} value={priority.id}>{priority.name}{priority.enabled ? '' : ' (disabled)'}</option>)}
               </select>
             </label>
+            {selectedPriorityRecord && !selectedPriorityRecord.enabled && <p className="disabled-category-notice">This priority is disabled for new selections, but remains on this previously saved case.</p>}
 
             <label>Assigned team
               <select value={selectedTeam} onChange={(event) => { setSelectedTeam(event.target.value); setSaveMessage('') }}>
