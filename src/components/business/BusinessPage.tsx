@@ -49,7 +49,6 @@ function BusinessPage() {
         </button>
         <p className="workspace-purpose">Multilingual customer support workspace</p>
         <nav className="workspace-nav">
-          <button className="active" type="button">Cases</button>
           <a href="#case-flow">How cases move</a>
           <button type="button" onClick={() => window.location.href = '/'}>Individual service</button>
         </nav>
@@ -62,7 +61,6 @@ function BusinessPage() {
             <h1>Review what needs attention.</h1>
             <p>Check multilingual inquiries, evidence, requested outcomes, and missing information before taking action.</p>
           </div>
-          <button className="primary-button" type="button" onClick={() => window.location.href = '/business/cases/demo'}>Open priority case</button>
         </section>
 
         <section className="status-grid status-grid-dynamic" aria-label="Case status overview">
