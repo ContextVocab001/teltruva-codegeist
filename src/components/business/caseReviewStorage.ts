@@ -5,10 +5,11 @@ export type BusinessCaseReview = {
   assignedTeamId: string
   assigneeId: string
   statusId: string
+  dueDate: string
 }
 
-const STORAGE_KEY = 'teltruva-business-case-review-tlt-2026-001-v7'
-const PREVIOUS_STORAGE_KEY = 'teltruva-business-case-review-tlt-2026-001-v6'
+const STORAGE_KEY = 'teltruva-business-case-review-tlt-2026-001-v8'
+const PREVIOUS_STORAGE_KEY = 'teltruva-business-case-review-tlt-2026-001-v7'
 
 const emptyReview: BusinessCaseReview = {
   categoryId: '',
@@ -17,6 +18,7 @@ const emptyReview: BusinessCaseReview = {
   assignedTeamId: '',
   assigneeId: '',
   statusId: '',
+  dueDate: '',
 }
 
 function normalizeReview(parsed: Record<string, unknown>): BusinessCaseReview {
@@ -28,6 +30,7 @@ function normalizeReview(parsed: Record<string, unknown>): BusinessCaseReview {
     assignedTeamId: typeof parsed.assignedTeamId === 'string' ? parsed.assignedTeamId : '',
     assigneeId: typeof parsed.assigneeId === 'string' ? parsed.assigneeId : '',
     statusId: typeof parsed.statusId === 'string' ? parsed.statusId : '',
+    dueDate: typeof parsed.dueDate === 'string' ? parsed.dueDate : '',
   }
 }
 
@@ -35,8 +38,10 @@ export function loadBusinessCaseReview(): BusinessCaseReview {
   try {
     const current = window.localStorage.getItem(STORAGE_KEY)
     if (current) return normalizeReview(JSON.parse(current) as Record<string, unknown>)
+
     const previous = window.localStorage.getItem(PREVIOUS_STORAGE_KEY)
     if (previous) return normalizeReview(JSON.parse(previous) as Record<string, unknown>)
+
     return emptyReview
   } catch {
     return emptyReview

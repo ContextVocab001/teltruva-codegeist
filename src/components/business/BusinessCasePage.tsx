@@ -24,6 +24,7 @@ function BusinessCasePage() {
   const [selectedAssignee, setSelectedAssignee] = useState(savedReview.assigneeId)
   const defaultStatus = statuses.find((status) => status.isDefault && status.enabled)?.id ?? statuses.find((status) => status.enabled)?.id ?? ''
   const [selectedStatus, setSelectedStatus] = useState(savedReview.statusId || defaultStatus)
+  const [dueDate, setDueDate] = useState(savedReview.dueDate)
   const [saveMessage, setSaveMessage] = useState('')
 
   const categoryOptions = useMemo(
@@ -57,6 +58,11 @@ function BusinessCasePage() {
   const selectedPriorityRecord = priorities.find((priority) => priority.id === selectedPriority)
   const selectedStatusRecord = statuses.find((status) => status.id === selectedStatus)
 
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const selectedDueDate = dueDate ? new Date(`${dueDate}T00:00:00`) : null
+  const dueDateIsPast = Boolean(selectedDueDate && selectedDueDate < today)
+
   useEffect(() => {
     document.body.classList.add('business-route')
     document.title = 'Case TLT-2026-001 | Teltruva'
@@ -85,8 +91,9 @@ function BusinessCasePage() {
       assignedTeamId: selectedTeam,
       assigneeId: selectedAssignee,
       statusId: selectedStatus,
+      dueDate,
     })
-    setSaveMessage('Category, tags, priority, assigned team, assignee, and status saved in this browser demo.')
+    setSaveMessage('Category, tags, priority, assigned team, assignee, status, and due date saved in this browser demo.')
   }
 
   return (
@@ -182,6 +189,16 @@ function BusinessCasePage() {
               </select>
             </label>
             {selectedStatusRecord && !selectedStatusRecord.enabled && <p className="disabled-category-notice">This status is disabled for new selections, but remains on this previously saved case.</p>}
+
+            <label>Due date
+              <input
+                type="date"
+                value={dueDate}
+                onChange={(event) => { setDueDate(event.target.value); setSaveMessage('') }}
+                style={{ minHeight: '52px', padding: '0 14px', border: '1px solid #c6d4e4', borderRadius: '11px', background: '#fff', color: '#203956', font: 'inherit', fontSize: '19px' }}
+              />
+            </label>
+            {dueDateIsPast && <p className="disabled-category-notice">This due date is in the past. You can still save it for an existing or overdue case.</p>}
 
             <div className="human-note"><b>✓</b><p><strong>Human review required.</strong> Teltruva does not choose the company category, priority, assigned team, or assignee.</p></div>
             <button className="primary-button full" type="button" onClick={saveReview}>Save review</button>
