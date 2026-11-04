@@ -284,3 +284,114 @@
 /* Centered duplicate-member notice. */
 .duplicate-member-dialog{text-align:center}
 .duplicate-member-dialog p{max-width:430px;margin-left:auto;margin-right:auto}
+
+/* Case list search and filters. */
+.case-filter-panel{
+  margin-top:38px;
+  padding:22px;
+  display:grid;
+  grid-template-columns:minmax(300px,1.6fr) minmax(200px,.7fr) minmax(200px,.7fr) auto;
+  align-items:end;
+  gap:14px;
+  border:1px solid #d4dfeb;
+  border-radius:18px;
+  background:#fff;
+  box-shadow:0 12px 30px rgba(30,54,83,.06);
+}
+.case-search-field,
+.case-filter-field{
+  min-width:0;
+  display:grid;
+  gap:8px;
+  color:#354d6a;
+  font-size:17px;
+  font-weight:800;
+}
+.case-search-field input,
+.case-filter-field select{
+  width:100%;
+  min-height:52px;
+  padding:0 14px;
+  border:1px solid #c6d4e4;
+  border-radius:11px;
+  background:#fff;
+  color:#203956;
+  font:inherit;
+  font-size:18px;
+}
+.case-search-field input:focus,
+.case-filter-field select:focus{
+  border-color:#6687d2;
+  outline:3px solid rgba(49,94,232,.14);
+}
+.clear-case-filters{
+  min-height:52px;
+  padding:11px 17px;
+  border:1px solid #9eb4dc;
+  border-radius:11px;
+  background:#f3f6ff;
+  color:#294fbd;
+  font:inherit;
+  font-size:17px;
+  font-weight:820;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.clear-case-filters:hover:not(:disabled){
+  border-color:#7796dd;
+  background:#e5edff;
+}
+.clear-case-filters:disabled{
+  opacity:.48;
+  cursor:not-allowed;
+}
+.case-filter-empty{
+  padding:48px 24px;
+  border:1px dashed #b8c7d9;
+  border-radius:18px;
+  background:#f8fafc;
+  text-align:center;
+}
+.case-filter-empty strong{
+  display:block;
+  color:#203956;
+  font-size:22px;
+}
+.case-filter-empty p{
+  margin:8px 0 0;
+  color:#60748d;
+  font-size:18px;
+}
+.case-filter-empty button{
+  min-height:46px;
+  margin-top:20px;
+  padding:9px 16px;
+  border:1px solid #9eb4dc;
+  border-radius:10px;
+  background:#fff;
+  color:#294fbd;
+  font:inherit;
+  font-size:17px;
+  font-weight:800;
+  cursor:pointer;
+}
+@media(max-width:1050px){
+  .case-filter-panel{
+    grid-template-columns:1fr 1fr;
+  }
+  .case-search-field{
+    grid-column:1 / -1;
+  }
+  .clear-case-filters{
+    width:100%;
+  }
+}
+@media(max-width:620px){
+  .case-filter-panel{
+    grid-template-columns:1fr;
+    padding:18px;
+  }
+  .case-search-field{
+    grid-column:auto;
+  }
+}
