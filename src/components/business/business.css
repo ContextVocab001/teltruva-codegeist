@@ -290,7 +290,7 @@
   margin-top:38px;
   padding:22px;
   display:grid;
-  grid-template-columns:minmax(300px,1.6fr) minmax(200px,.7fr) minmax(200px,.7fr) auto;
+  grid-template-columns:minmax(230px,1.2fr) repeat(7,minmax(130px,.6fr)) auto;
   align-items:end;
   gap:14px;
   border:1px solid #d4dfeb;
@@ -395,3 +395,95 @@
     grid-column:auto;
   }
 }
+
+/* Four filtering controls remain balanced when Category is added. */
+@media(max-width:1250px){
+  .case-filter-panel{
+    grid-template-columns:1fr 1fr;
+  }
+  .case-search-field{
+    grid-column:1 / -1;
+  }
+  .clear-case-filters{
+    width:100%;
+  }
+}
+
+/* Team filter adds a fifth filter control without compressing labels. */
+@media(max-width:1450px){
+  .case-filter-panel{
+    grid-template-columns:1fr 1fr 1fr;
+  }
+  .case-search-field{
+    grid-column:1 / -1;
+  }
+  .clear-case-filters{
+    width:100%;
+  }
+}
+
+/* Assignee filter adds a sixth control while keeping fields readable. */
+@media(max-width:1650px){
+  .case-filter-panel{
+    grid-template-columns:1fr 1fr 1fr;
+  }
+  .case-search-field{
+    grid-column:1 / -1;
+  }
+  .clear-case-filters{
+    width:100%;
+  }
+}
+
+/* Tag filter adds a seventh control; wide screens keep one row, smaller screens wrap. */
+@media(max-width:1850px){
+  .case-filter-panel{
+    grid-template-columns:1fr 1fr 1fr 1fr;
+  }
+  .case-search-field{
+    grid-column:1 / -1;
+  }
+  .clear-case-filters{
+    width:100%;
+  }
+}
+
+/* Due-date filter is the final compact filter in the current list toolbar. */
+@media(max-width:2050px){
+  .case-filter-panel{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+  .case-search-field{
+    grid-column:1 / -1;
+  }
+  .clear-case-filters{
+    width:100%;
+  }
+}
+
+/* Workflow settings: Due date rules. */
+.settings-nav-group-label{margin:6px 10px 3px;color:#75869b;font-size:13px;font-weight:900;letter-spacing:.09em;text-transform:uppercase}
+.settings-nav-divider{height:1px;margin:8px 6px;background:#dce5ef}
+.due-date-rules-panel{min-height:430px}
+.due-rule-card{margin-top:28px;padding:24px;border:1px solid #dce5ef;border-radius:16px;background:#f7f9fc}
+.due-rule-card>label{display:block;color:#203956;font-size:20px;font-weight:850}
+.due-rule-input-row{margin-top:12px;display:flex;align-items:center;gap:12px}
+.due-rule-input-row input{width:150px;min-height:54px;padding:0 14px;border:1px solid #c6d4e4;border-radius:11px;background:#fff;color:#203956;font:inherit;font-size:20px;font-weight:800}
+.due-rule-input-row span{color:#4d637d;font-size:18px;font-weight:750}
+.due-rule-card>p{max-width:720px;margin:13px 0 0;color:#60748d;font-size:18px;line-height:1.6}
+.due-rule-card>button{min-height:50px;margin-top:22px;padding:11px 18px;border:0;border-radius:11px;background:#315ee8;color:#fff;font:inherit;font-size:18px;font-weight:850;cursor:pointer}
+.due-rule-card>button:hover{background:#284fd0}
+.due-rule-card .due-rule-message{margin-top:12px;padding:10px 12px;border:1px solid #c8dfd2;border-radius:10px;background:#eff9f3;color:#286044;font-size:17px;font-weight:750}
+@media(max-width:560px){.due-rule-input-row{align-items:flex-start;flex-direction:column}.due-rule-input-row input{width:100%}}
+
+/* Multiple due-date thresholds. */
+.due-rule-input-row button{min-height:54px;padding:11px 17px;border:0;border-radius:11px;background:#315ee8;color:#fff;font:inherit;font-size:17px;font-weight:850;cursor:pointer}
+.due-rule-input-row button:hover{background:#284fd0}
+.due-threshold-list{margin-top:22px;display:grid;gap:10px}
+.due-threshold-list article{padding:18px;display:flex;align-items:center;justify-content:space-between;gap:18px;border:1px solid #dbe4ee;border-radius:13px;background:#fff}
+.due-threshold-list strong,.due-threshold-list span{display:block}
+.due-threshold-list strong{color:#1e3858;font-size:20px}
+.due-threshold-list span{margin-top:4px;color:#657990;font-size:16px}
+.due-threshold-list button{min-height:34px;padding:5px 9px;border:0;border-radius:8px;background:#fff3f2;color:#a54842;font:inherit;font-size:14px;font-weight:800;cursor:pointer}
+.due-threshold-list button:hover{background:#ffe5e3}
+@media(max-width:700px){.due-rule-input-row{align-items:stretch;flex-direction:column}.due-rule-input-row input{width:100%}.due-threshold-list article{align-items:flex-start;flex-direction:column}}

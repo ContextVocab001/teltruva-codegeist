@@ -6,8 +6,9 @@ import { loadBusinessPriorities, saveBusinessPriorities, type BusinessPriority }
 import { loadBusinessStatuses, saveBusinessStatuses, type BusinessStatus } from './statusMaster'
 import { loadBusinessTags, saveBusinessTags, type BusinessTag } from './tagMaster'
 import { loadBusinessMembers, saveBusinessMembers, type BusinessMember } from './memberMaster'
+import { loadDueDateRules, saveDueDateRules } from './dueDateRules'
 
-type SettingsSection = 'categories' | 'tags' | 'priorities' | 'teams' | 'members' | 'statuses'
+type SettingsSection = 'categories' | 'tags' | 'priorities' | 'teams' | 'members' | 'statuses' | 'due-date-rules'
 type DeletableMaster = { kind: SettingsSection; id: string; name: string }
 type EditableMaster = { kind: SettingsSection; id: string; name: string; teamId?: string }
 type DuplicateMaster = { kind: SettingsSection; name: string }
@@ -30,6 +31,10 @@ function BusinessSettingsPage() {
   const [duplicateMaster, setDuplicateMaster] = useState<DuplicateMaster | null>(null)
   const [blockedDefaultPriority, setBlockedDefaultPriority] = useState<BusinessPriority | null>(null)
   const [blockedDefaultStatus, setBlockedDefaultStatus] = useState<BusinessStatus | null>(null)
+  const initialDueDateRules = loadDueDateRules()
+  const [dueSoonThresholds, setDueSoonThresholds] = useState<number[]>(initialDueDateRules.dueSoonThresholds)
+  const [newDueSoonDays, setNewDueSoonDays] = useState('')
+  const [dueDateRuleMessage, setDueDateRuleMessage] = useState('')
 
   useEffect(() => {
     document.body.classList.add('business-route')
@@ -42,6 +47,7 @@ function BusinessSettingsPage() {
     setNewValue('')
     setMessage('')
     setNewMemberTeamId('')
+    setDueDateRuleMessage('')
   }
 
   const addValue = () => {
@@ -220,11 +226,40 @@ function BusinessSettingsPage() {
     setItemToDelete(null)
   }
 
+  const addDueDateThreshold = () => {
+    const days = Number(newDueSoonDays)
+    if (!Number.isInteger(days) || days < 1 || days > 365) {
+      setDueDateRuleMessage('Enter a whole number from 1 to 365.')
+      return
+    }
+    if (dueSoonThresholds.includes(days)) {
+      setDueDateRuleMessage(`A ${days}-day threshold already exists.`)
+      return
+    }
+    const next = [...dueSoonThresholds, days].sort((a, b) => a - b)
+    setDueSoonThresholds(next)
+    saveDueDateRules({ dueSoonThresholds: next })
+    setNewDueSoonDays('')
+    setDueDateRuleMessage(`Due within ${days} days was added.`)
+  }
+
+  const deleteDueDateThreshold = (days: number) => {
+    if (dueSoonThresholds.length === 1) {
+      setDueDateRuleMessage('Keep at least one due-soon threshold.')
+      return
+    }
+    const next = dueSoonThresholds.filter((value) => value !== days)
+    setDueSoonThresholds(next)
+    saveDueDateRules({ dueSoonThresholds: next })
+    setDueDateRuleMessage(`The ${days}-day threshold was removed.`)
+  }
+
   const isCategories = section === 'categories'
   const isTags = section === 'tags'
   const isPriorities = section === 'priorities'
   const isMembers = section === 'members'
   const isStatuses = section === 'statuses'
+  const isDueDateRules = section === 'due-date-rules'
   const values = isCategories ? categories : isTags ? tags : isPriorities ? priorities : isStatuses ? statuses : isMembers ? members : teams
   const activeCount = values.filter((item) => item.enabled).length
   const singular = isCategories ? 'category' : isTags ? 'tag' : isPriorities ? 'priority' : isStatuses ? 'status' : isMembers ? 'member' : 'team'
@@ -242,14 +277,49 @@ function BusinessSettingsPage() {
 
         <div className="settings-layout">
           <nav className="settings-nav" aria-label="Business settings sections">
+            <p className="settings-nav-group-label">Master data</p>
             <button className={isCategories ? 'active' : ''} type="button" onClick={() => switchSection('categories')}>Categories</button>
             <button className={isTags ? 'active' : ''} type="button" onClick={() => switchSection('tags')}>Tags</button>
             <button className={isPriorities ? 'active' : ''} type="button" onClick={() => switchSection('priorities')}>Priorities</button>
             <button className={section === 'teams' ? 'active' : ''} type="button" onClick={() => switchSection('teams')}>Teams</button>
             <button className={isMembers ? 'active' : ''} type="button" onClick={() => switchSection('members')}>Members</button>
             <button className={isStatuses ? 'active' : ''} type="button" onClick={() => switchSection('statuses')}>Statuses</button>
+            <div className="settings-nav-divider" />
+            <p className="settings-nav-group-label">Workflow settings</p>
+            <button className={isDueDateRules ? 'active' : ''} type="button" onClick={() => switchSection('due-date-rules')}>Due date rules</button>
           </nav>
 
+          {isDueDateRules ? (
+          <section className="master-panel due-date-rules-panel">
+            <div className="master-panel-heading">
+              <div><p>Workflow setting</p><h2>Due date rules</h2></div>
+              <span>{dueSoonThresholds.length} active</span>
+            </div>
+            <p className="master-description">Create the calendar-day thresholds that appear in case-list filters.</p>
+
+            <div className="due-rule-card">
+              <label htmlFor="new-due-soon-days">New due-soon threshold</label>
+              <div className="due-rule-input-row">
+                <input id="new-due-soon-days" type="number" min="1" max="365" step="1" value={newDueSoonDays} onChange={(event) => { setNewDueSoonDays(event.target.value); setDueDateRuleMessage('') }} placeholder="Enter days" />
+                <span>calendar days</span>
+                <button type="button" onClick={addDueDateThreshold}>Add threshold</button>
+              </div>
+              <p>A case can appear in more than one threshold. For example, a case due in 2 days is included in both “Due within 3 days” and “Due within 7 days.”</p>
+              {dueDateRuleMessage && <p className="due-rule-message" aria-live="polite">{dueDateRuleMessage}</p>}
+            </div>
+
+            <div className="due-threshold-list" role="list">
+              {dueSoonThresholds.map((days) => (
+                <article key={days} role="listitem">
+                  <div><strong>Due within {days} day{days === 1 ? '' : 's'}</strong><span>Includes today through the next {days} calendar day{days === 1 ? '' : 's'}.</span></div>
+                  <button type="button" onClick={() => deleteDueDateThreshold(days)}>Delete</button>
+                </article>
+              ))}
+            </div>
+
+            <div className="settings-note"><strong>Automatic date states</strong><p>Overdue, Due today, and No due date are calculated automatically and do not need separate rules.</p></div>
+          </section>
+          ) : (
           <section className="master-panel">
             <div className="master-panel-heading"><div><p>{isCategories ? 'Category master' : isTags ? 'Tag master' : isPriorities ? 'Priority master' : isStatuses ? 'Status master' : isMembers ? 'Member master' : 'Team master'}</p><h2>{isCategories ? 'Categories' : isTags ? 'Tags' : isPriorities ? 'Priorities' : isStatuses ? 'Statuses' : isMembers ? 'Members' : 'Teams'}</h2></div><span>{activeCount} active</span></div>
             <p className="master-description">{isCategories ? 'Categories are selected by support specialists. Teltruva does not assign them automatically.' : isTags ? 'Tags are selected from the company master. Multiple tags can be attached to one case.' : isPriorities ? 'Priorities are selected by support specialists. Choose one enabled value as the default.' : isStatuses ? 'Statuses describe the current stage of each case. Choose one enabled value as the default.' : isMembers ? 'Members belong to a team. Only members of the selected team are available as assignees.' : 'Teams are selected by support specialists. Teltruva does not assign cases automatically.'}</p>
@@ -293,6 +363,7 @@ function BusinessSettingsPage() {
 
             <div className="settings-note"><strong>Demo storage</strong><p>Changes are stored only in this browser. Company accounts, administrator permissions, and permanent shared storage will be added later.</p></div>
           </section>
+          )}
         </div>
       </main>
 

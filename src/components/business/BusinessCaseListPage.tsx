@@ -1,8 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import './business.css'
 import { loadBusinessCaseReview } from './caseReviewStorage'
+import { loadBusinessCategories } from './categoryMaster'
 import { loadBusinessPriorities } from './priorityMaster'
 import { loadBusinessStatuses } from './statusMaster'
+import { loadBusinessTeams } from './teamMaster'
+import { loadBusinessMembers } from './memberMaster'
+import { loadBusinessTags } from './tagMaster'
+import { loadDueDateRules } from './dueDateRules'
 
 const sampleCases = [
   {
@@ -11,6 +16,10 @@ const sampleCases = [
     language: 'Japanese → English',
     evidence: 'Receipt attached',
     priorityId: 'urgent',
+    categoryId: 'billing',
+    assignedTeamId: 'billing-team',
+    assigneeId: 'billing-specialist',
+    tagIds: ['duplicate-charge', 'receipt-attached'],
     route: '/business/cases/demo',
   },
   {
@@ -19,6 +28,10 @@ const sampleCases = [
     language: 'Spanish → English',
     evidence: 'Email attached',
     priorityId: 'normal',
+    categoryId: 'reservation',
+    assignedTeamId: 'customer-care',
+    assigneeId: 'customer-care-specialist',
+    tagIds: ['refund-requested', 'missing-information'],
     statusId: 'waiting-information',
   },
   {
@@ -27,11 +40,15 @@ const sampleCases = [
     language: 'English → English',
     evidence: 'Invoice attached',
     priorityId: 'high',
+    categoryId: 'billing',
+    assignedTeamId: 'hotel-operations',
+    assigneeId: 'operations-specialist',
+    tagIds: ['receipt-attached', 'international-customer'],
     statusId: 'ready-action',
   },
 ]
 
-function getDueDateSummary(dueDate: string) {
+function getDueDateSummary(dueDate: string, largestThreshold: number) {
   if (!dueDate) return null
 
   const today = new Date()
@@ -62,7 +79,7 @@ function getDueDateSummary(dueDate: string) {
       border: '#e7c978',
     }
   }
-  if (days <= 3) {
+  if (days <= largestThreshold) {
     return {
       label: `Due in ${days} day${days === 1 ? '' : 's'} · ${formatted}`,
       background: '#fff8e8',
@@ -76,27 +93,63 @@ function getDueDateSummary(dueDate: string) {
 
 function BusinessCaseListPage() {
   const statuses = loadBusinessStatuses()
+  const categories = loadBusinessCategories()
+  const teams = loadBusinessTeams()
+  const members = loadBusinessMembers()
+  const tags = loadBusinessTags()
+  const dueDateRules = loadDueDateRules()
+  const largestDueSoonThreshold = Math.max(...dueDateRules.dueSoonThresholds)
   const priorities = loadBusinessPriorities()
   const savedReview = loadBusinessCaseReview()
   const defaultStatus = statuses.find((status) => status.isDefault && status.enabled)?.id ?? 'needs-review'
   const defaultPriority = priorities.find((priority) => priority.isDefault && priority.enabled)?.id ?? 'normal'
   const demoCaseStatusId = savedReview.statusId || defaultStatus
   const demoCasePriorityId = savedReview.priorityId || defaultPriority
-  const demoDueDateSummary = getDueDateSummary(savedReview.dueDate)
+  const demoDueDateSummary = getDueDateSummary(savedReview.dueDate, largestDueSoonThreshold)
 
   const [searchText, setSearchText] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [priorityFilter, setPriorityFilter] = useState('all')
+  const [categoryFilter, setCategoryFilter] = useState('all')
+  const [teamFilter, setTeamFilter] = useState('all')
+  const [assigneeFilter, setAssigneeFilter] = useState('all')
+  const [tagFilter, setTagFilter] = useState('all')
+  const [dueDateFilter, setDueDateFilter] = useState('all')
 
   const cases = useMemo(
     () => sampleCases.map((item) => ({
       ...item,
       statusId: item.id === 'TLT-2026-001' ? demoCaseStatusId : item.statusId,
       priorityId: item.id === 'TLT-2026-001' ? demoCasePriorityId : item.priorityId,
+      categoryId: item.id === 'TLT-2026-001' ? savedReview.categoryId || item.categoryId : item.categoryId,
+      assignedTeamId: item.id === 'TLT-2026-001' ? savedReview.assignedTeamId || item.assignedTeamId : item.assignedTeamId,
+      assigneeId: item.id === 'TLT-2026-001' ? savedReview.assigneeId || item.assigneeId : item.assigneeId,
+      tagIds: item.id === 'TLT-2026-001' && savedReview.tagIds.length > 0 ? savedReview.tagIds : item.tagIds,
+      dueDate: item.id === 'TLT-2026-001' ? savedReview.dueDate : '',
       dueDateSummary: item.id === 'TLT-2026-001' ? demoDueDateSummary : null,
     })),
     [demoCasePriorityId, demoCaseStatusId, demoDueDateSummary?.label]
   )
+
+  const matchesDueDateFilter = (dueDate: string) => {
+    if (dueDateFilter === 'all') return true
+    if (dueDateFilter === 'none') return !dueDate
+    if (!dueDate) return false
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const due = new Date(`${dueDate}T00:00:00`)
+    if (Number.isNaN(due.getTime())) return false
+
+    const days = Math.round((due.getTime() - today.getTime()) / 86400000)
+    if (dueDateFilter === 'overdue') return days < 0
+    if (dueDateFilter === 'today') return days === 0
+    if (dueDateFilter.startsWith('within-')) {
+      const threshold = Number(dueDateFilter.replace('within-', ''))
+      return Number.isInteger(threshold) && days >= 0 && days <= threshold
+    }
+    return true
+  }
 
   const filteredCases = useMemo(() => {
     const query = searchText.trim().toLowerCase()
@@ -105,16 +158,30 @@ function BusinessCaseListPage() {
       const matchesSearch = !query || item.id.toLowerCase().includes(query) || item.title.toLowerCase().includes(query)
       const matchesStatus = statusFilter === 'all' || item.statusId === statusFilter
       const matchesPriority = priorityFilter === 'all' || item.priorityId === priorityFilter
-      return matchesSearch && matchesStatus && matchesPriority
+      const matchesCategory = categoryFilter === 'all' || item.categoryId === categoryFilter
+      const matchesTeam = teamFilter === 'all' || item.assignedTeamId === teamFilter
+      const matchesAssignee = assigneeFilter === 'all' || item.assigneeId === assigneeFilter
+      const matchesTag = tagFilter === 'all' || item.tagIds.includes(tagFilter)
+      const matchesDueDate = matchesDueDateFilter(item.dueDate)
+      return matchesSearch && matchesStatus && matchesPriority && matchesCategory && matchesTeam && matchesAssignee && matchesTag && matchesDueDate
     })
-  }, [cases, priorityFilter, searchText, statusFilter])
+  }, [cases, assigneeFilter, categoryFilter, dueDateFilter, priorityFilter, searchText, statusFilter, tagFilter, teamFilter])
 
-  const filtersAreActive = Boolean(searchText.trim() || statusFilter !== 'all' || priorityFilter !== 'all')
+  const filtersAreActive = Boolean(
+    searchText.trim() || statusFilter !== 'all' || priorityFilter !== 'all' ||
+    categoryFilter !== 'all' || teamFilter !== 'all' || assigneeFilter !== 'all' ||
+    tagFilter !== 'all' || dueDateFilter !== 'all'
+  )
 
   const clearFilters = () => {
     setSearchText('')
     setStatusFilter('all')
     setPriorityFilter('all')
+    setCategoryFilter('all')
+    setTeamFilter('all')
+    setAssigneeFilter('all')
+    setTagFilter('all')
+    setDueDateFilter('all')
   }
 
   useEffect(() => {
@@ -142,7 +209,7 @@ function BusinessCaseListPage() {
           <div>
             <p className="workspace-kicker">Case workspace</p>
             <h1>All cases</h1>
-            <p>Search the current company workspace and narrow cases by status or priority.</p>
+            <p>Search the current company workspace and narrow cases by status, priority, category, team, assignee, tag, or due date.</p>
           </div>
         </section>
 
@@ -174,6 +241,67 @@ function BusinessCaseListPage() {
               {priorities.map((priority) => (
                 <option key={priority.id} value={priority.id}>{priority.name}</option>
               ))}
+            </select>
+          </label>
+
+          <label className="case-filter-field">
+            <span>Category</span>
+            <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
+              <option value="all">All categories</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}{category.enabled ? '' : ' (disabled)'}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="case-filter-field">
+            <span>Team</span>
+            <select value={teamFilter} onChange={(event) => setTeamFilter(event.target.value)}>
+              <option value="all">All teams</option>
+              {teams.map((team) => (
+                <option key={team.id} value={team.id}>
+                  {team.name}{team.enabled ? '' : ' (disabled)'}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="case-filter-field">
+            <span>Assignee</span>
+            <select value={assigneeFilter} onChange={(event) => setAssigneeFilter(event.target.value)}>
+              <option value="all">All assignees</option>
+              {members.map((member) => (
+                <option key={member.id} value={member.id}>
+                  {member.name}{member.enabled ? '' : ' (disabled)'}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="case-filter-field">
+            <span>Tag</span>
+            <select value={tagFilter} onChange={(event) => setTagFilter(event.target.value)}>
+              <option value="all">All tags</option>
+              {tags.map((tag) => (
+                <option key={tag.id} value={tag.id}>
+                  {tag.name}{tag.enabled ? '' : ' (disabled)'}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="case-filter-field">
+            <span>Due date</span>
+            <select value={dueDateFilter} onChange={(event) => setDueDateFilter(event.target.value)}>
+              <option value="all">All due dates</option>
+              <option value="overdue">Overdue</option>
+              <option value="today">Due today</option>
+              {dueDateRules.dueSoonThresholds.map((days) => (
+                <option key={days} value={`within-${days}`}>Due within {days} day{days === 1 ? '' : 's'}</option>
+              ))}
+              <option value="none">No due date</option>
             </select>
           </label>
 
@@ -253,7 +381,7 @@ function BusinessCaseListPage() {
           ) : (
             <div className="case-filter-empty" role="status">
               <strong>No cases match these filters.</strong>
-              <p>Change the search text, status, or priority to see other cases.</p>
+              <p>Change the search text, status, priority, category, team, assignee, tag, or due date to see other cases.</p>
               <button type="button" onClick={clearFilters}>Clear filters</button>
             </div>
           )}
