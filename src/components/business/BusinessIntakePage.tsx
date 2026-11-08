@@ -1,404 +1,536 @@
-import { useEffect, useState, type ChangeEvent, type DragEvent, type FormEvent } from 'react'
-import * as pdfjs from 'pdfjs-dist'
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
-import { buildCaseReviewData, prepareStructuredCase, runOcr } from '../../api/caseAnalysis'
+import { useEffect, useMemo, useState } from 'react'
 import './business.css'
-import './BusinessIntakePage.css'
+import { loadBusinessCaseReview } from './caseReviewStorage'
+import { loadBusinessCategories } from './categoryMaster'
+import { loadBusinessPriorities } from './priorityMaster'
+import { loadBusinessStatuses } from './statusMaster'
+import { loadBusinessTeams } from './teamMaster'
+import { loadBusinessMembers } from './memberMaster'
+import { loadBusinessTags } from './tagMaster'
+import { loadDueDateRules } from './dueDateRules'
 
-pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker
+const sampleCases = [
+  {
+    id: 'TLT-2026-001',
+    title: 'Possible duplicate charge after checkout',
+    language: 'Japanese → English',
+    evidence: 'Receipt attached',
+    priorityId: 'urgent',
+    categoryId: 'billing',
+    assignedTeamId: 'billing-team',
+    assigneeId: 'billing-specialist',
+    tagIds: ['duplicate-charge', 'receipt-attached'],
+    route: '/business/cases/demo',
+  },
+  {
+    id: 'TLT-2026-002',
+    title: 'Reservation cancellation refund request',
+    language: 'Spanish → English',
+    evidence: 'Email attached',
+    priorityId: 'normal',
+    categoryId: 'reservation',
+    assignedTeamId: 'customer-care',
+    assigneeId: 'customer-care-specialist',
+    tagIds: ['refund-requested', 'missing-information'],
+    statusId: 'waiting-information',
+  },
+  {
+    id: 'TLT-2026-003',
+    title: 'Incorrect room charge on final invoice',
+    language: 'English → English',
+    evidence: 'Invoice attached',
+    priorityId: 'high',
+    categoryId: 'billing',
+    assignedTeamId: 'hotel-operations',
+    assigneeId: 'operations-specialist',
+    tagIds: ['receipt-attached', 'international-customer'],
+    statusId: 'ready-action',
+  },
+]
 
-type IntakeLanguage = 'English' | 'Japanese' | 'Spanish'
+function getDueDateSummary(dueDate: string, largestThreshold: number) {
+  if (!dueDate) return null
 
-type IntakeData = {
-  language: IntakeLanguage
-  contactName: string
-  email: string
-  issue: string
-  requestedOutcome: string
-  documentName: string
-  referenceNumber: string
-}
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const due = new Date(`${dueDate}T00:00:00`)
+  if (Number.isNaN(due.getTime())) return null
 
-const emptyIntake: IntakeData = {
-  language: 'English',
-  contactName: '',
-  email: '',
-  issue: '',
-  requestedOutcome: '',
-  documentName: '',
-  referenceNumber: '',
-}
-
-function fileToDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(String(reader.result))
-    reader.onerror = reject
-    reader.readAsDataURL(file)
+  const days = Math.round((due.getTime() - today.getTime()) / 86400000)
+  const formatted = due.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
   })
-}
 
-async function filesToOcrImages(files: File[]) {
-  const images: string[] = []
-
-  for (const file of files) {
-    if (file.type.startsWith('image/')) {
-      images.push(await fileToDataUrl(file))
-      continue
+  if (days < 0) {
+    return {
+      label: `Overdue · ${formatted}`,
+      background: '#fff0ee',
+      color: '#a33b35',
+      border: '#e5aaa6',
     }
-
-    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
-      const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise
-      for (let pageNumber = 1; pageNumber <= Math.min(pdf.numPages, 6); pageNumber += 1) {
-        const page = await pdf.getPage(pageNumber)
-        const viewport = page.getViewport({ scale: 1.8 })
-        const canvas = document.createElement('canvas')
-        canvas.width = Math.ceil(viewport.width)
-        canvas.height = Math.ceil(viewport.height)
-        const context = canvas.getContext('2d')
-        if (!context) continue
-        await page.render({ canvas, canvasContext: context, viewport }).promise
-        images.push(canvas.toDataURL('image/jpeg', 0.9))
-      }
+  }
+  if (days === 0) {
+    return {
+      label: `Due today · ${formatted}`,
+      background: '#fff3dc',
+      color: '#8a5b08',
+      border: '#e7c978',
+    }
+  }
+  if (days <= largestThreshold) {
+    return {
+      label: `Due in ${days} day${days === 1 ? '' : 's'} · ${formatted}`,
+      background: '#fff8e8',
+      color: '#795b17',
+      border: '#e8d095',
     }
   }
 
-  return images
+  return null
 }
 
-type DocumentReview = ReturnType<typeof buildCaseReviewData>
+function BusinessCaseListPage() {
+  const statuses = loadBusinessStatuses()
+  const categories = loadBusinessCategories()
+  const teams = loadBusinessTeams()
+  const members = loadBusinessMembers()
+  const tags = loadBusinessTags()
+  const dueDateRules = loadDueDateRules()
+  const largestDueSoonThreshold = Math.max(...dueDateRules.dueSoonThresholds)
+  const priorities = loadBusinessPriorities()
+  const savedReview = loadBusinessCaseReview()
+  const defaultStatus = statuses.find((status) => status.isDefault && status.enabled)?.id ?? 'needs-review'
+  const defaultPriority = priorities.find((priority) => priority.isDefault && priority.enabled)?.id ?? 'normal'
+  const demoCaseStatusId = savedReview.statusId || defaultStatus
+  const demoCasePriorityId = savedReview.priorityId || defaultPriority
+  const demoDueDateSummary = getDueDateSummary(savedReview.dueDate, largestDueSoonThreshold)
 
-function formatFileSize(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
-}
+  const [searchText, setSearchText] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [priorityFilter, setPriorityFilter] = useState('all')
+  const [categoryFilter, setCategoryFilter] = useState('all')
+  const [teamFilter, setTeamFilter] = useState('all')
+  const [assigneeFilter, setAssigneeFilter] = useState('all')
+  const [tagFilter, setTagFilter] = useState('all')
+  const [dueDateFilter, setDueDateFilter] = useState('all')
+  const [sortBy, setSortBy] = useState('attention')
+  const [showMoreFilters, setShowMoreFilters] = useState(false)
 
-function fileTypeLabel(file: File) {
-  if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) return 'PDF'
-  return 'IMAGE'
-}
+  const cases = useMemo(
+    () => sampleCases.map((item) => ({
+      ...item,
+      statusId: item.id === 'TLT-2026-001' ? demoCaseStatusId : item.statusId,
+      priorityId: item.id === 'TLT-2026-001' ? demoCasePriorityId : item.priorityId,
+      categoryId: item.id === 'TLT-2026-001' ? savedReview.categoryId || item.categoryId : item.categoryId,
+      assignedTeamId: item.id === 'TLT-2026-001' ? savedReview.assignedTeamId || item.assignedTeamId : item.assignedTeamId,
+      assigneeId: item.id === 'TLT-2026-001' ? savedReview.assigneeId || item.assigneeId : item.assigneeId,
+      tagIds: item.id === 'TLT-2026-001' && savedReview.tagIds.length > 0 ? savedReview.tagIds : item.tagIds,
+      dueDate: item.id === 'TLT-2026-001' ? savedReview.dueDate : '',
+      dueDateSummary: item.id === 'TLT-2026-001' ? demoDueDateSummary : null,
+    })),
+    [demoCasePriorityId, demoCaseStatusId, demoDueDateSummary?.label]
+  )
 
-function BusinessIntakePage() {
-  const [data, setData] = useState<IntakeData>(emptyIntake)
-  const [files, setFiles] = useState<File[]>([])
-  const [showManualIdentifiers, setShowManualIdentifiers] = useState(false)
-  const [step, setStep] = useState<'edit' | 'review' | 'submitted'>('edit')
-  const [error, setError] = useState('')
-  const [isReadingDocuments, setIsReadingDocuments] = useState(false)
-  const [documentReview, setDocumentReview] = useState<DocumentReview | null>(null)
-  const [documentText, setDocumentText] = useState('')
-  const [isDraggingFiles, setIsDraggingFiles] = useState(false)
+  const matchesDueDateFilter = (dueDate: string) => {
+    if (dueDateFilter === 'all') return true
+    if (dueDateFilter === 'none') return !dueDate
+    if (!dueDate) return false
 
-  useEffect(() => {
-    document.body.classList.add('business-route')
-    document.title = 'Example Hotel Support | Teltruva'
-    return () => document.body.classList.remove('business-route')
-  }, [])
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const due = new Date(`${dueDate}T00:00:00`)
+    if (Number.isNaN(due.getTime())) return false
 
-  const update = (field: keyof IntakeData, value: string) => {
-    setData((current) => ({ ...current, [field]: value }))
-    setError('')
-  }
-
-  const validate = () => {
-    if (!data.contactName.trim() || !data.email.trim() || !data.issue.trim()) {
-      setError('Contact name, email, and inquiry details are required.')
-      return false
-    }
-    if (!/^\S+@\S+\.\S+$/.test(data.email.trim())) {
-      setError('Enter a valid email address.')
-      return false
+    const days = Math.round((due.getTime() - today.getTime()) / 86400000)
+    if (dueDateFilter === 'overdue') return days < 0
+    if (dueDateFilter === 'today') return days === 0
+    if (dueDateFilter.startsWith('within-')) {
+      const threshold = Number(dueDateFilter.replace('within-', ''))
+      return Number.isInteger(threshold) && days >= 0 && days <= threshold
     }
     return true
   }
 
-  const review = async (event: FormEvent) => {
-    event.preventDefault()
-    if (!validate()) return
-
-    setIsReadingDocuments(true)
-    setError('')
-
-    try {
-      if (files.length > 0) {
-        const images = await filesToOcrImages(files)
-        if (images.length === 0) {
-          throw new Error('No readable image or PDF pages were found in the selected documents.')
-        }
-
-        const ocr = await runOcr(images)
-        if (!ocr.text.trim()) {
-          throw new Error('No readable text was found. Try a clearer image or add the identifying information manually.')
-        }
-
-        const preparation = await prepareStructuredCase({
-          interfaceLanguage: 'en',
-          draftLanguage: 'en',
-          userText: [data.issue, data.requestedOutcome ? `Requested outcome: ${data.requestedOutcome}` : ''].filter(Boolean).join('\n\n'),
-          documentText: ocr.text,
-          ocrPages: ocr.pages,
-        })
-
-        setDocumentText(ocr.text)
-        setDocumentReview(buildCaseReviewData(preparation))
-      } else {
-        setDocumentText('')
-        setDocumentReview(null)
-      }
-
-      setStep('review')
-      window.scrollTo(0, 0)
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'The documents could not be read. Try again or enter identifying information manually.')
-    } finally {
-      setIsReadingDocuments(false)
-    }
+  const getDueTimestamp = (dueDate: string) => {
+    if (!dueDate) return Number.POSITIVE_INFINITY
+    const timestamp = new Date(`${dueDate}T00:00:00`).getTime()
+    return Number.isNaN(timestamp) ? Number.POSITIVE_INFINITY : timestamp
   }
 
-  const acceptFiles = (selectedFiles: File[]) => {
-    const supportedFiles = selectedFiles.filter((file) => {
-      const extension = file.name.toLowerCase().split('.').pop()
-      return file.type === 'application/pdf' || file.type.startsWith('image/') || ['pdf', 'png', 'jpg', 'jpeg', 'webp'].includes(extension ?? '')
+  const getPriorityRank = (priorityId: string) => {
+    const index = priorities.findIndex((priority) => priority.id === priorityId)
+    return index < 0 ? -1 : index
+  }
+
+  const getStatusRank = (statusId: string | undefined) => {
+    const index = statuses.findIndex((status) => status.id === statusId)
+    return index < 0 ? Number.MAX_SAFE_INTEGER : index
+  }
+
+  const getCaseIdNumber = (caseId: string) => {
+    const match = caseId.match(/(\d+)$/)
+    return match ? Number(match[1]) : 0
+  }
+
+  const getAttentionRank = (dueDate: string) => {
+    if (!dueDate) return 2
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const due = new Date(`${dueDate}T00:00:00`)
+    if (Number.isNaN(due.getTime())) return 2
+
+    const days = Math.round((due.getTime() - today.getTime()) / 86400000)
+    if (days < 0) return 0
+    if (days <= largestDueSoonThreshold) return 1
+    return 3
+  }
+
+  const visibleCases = useMemo(() => {
+    const query = searchText.trim().toLowerCase()
+    const filtered = cases.filter((item) => {
+      const matchesSearch = !query || item.id.toLowerCase().includes(query) || item.title.toLowerCase().includes(query)
+      const matchesStatus = statusFilter === 'all' || item.statusId === statusFilter
+      const matchesPriority = priorityFilter === 'all' || item.priorityId === priorityFilter
+      const matchesCategory = categoryFilter === 'all' || item.categoryId === categoryFilter
+      const matchesTeam = teamFilter === 'all' || item.assignedTeamId === teamFilter
+      const matchesAssignee = assigneeFilter === 'all' || item.assigneeId === assigneeFilter
+      const matchesTag = tagFilter === 'all' || item.tagIds.includes(tagFilter)
+      const matchesDueDate = matchesDueDateFilter(item.dueDate)
+      return matchesSearch && matchesStatus && matchesPriority && matchesCategory && matchesTeam && matchesAssignee && matchesTag && matchesDueDate
     })
 
-    if (supportedFiles.length !== selectedFiles.length) {
-      setError('Only PDF, PNG, JPG, JPEG, and WEBP files are supported.')
-      return
-    }
+    return [...filtered].sort((a, b) => {
+      if (sortBy === 'due-date') {
+        return getDueTimestamp(a.dueDate) - getDueTimestamp(b.dueDate) || getPriorityRank(b.priorityId) - getPriorityRank(a.priorityId)
+      }
+      if (sortBy === 'priority') {
+        return getPriorityRank(b.priorityId) - getPriorityRank(a.priorityId) || getDueTimestamp(a.dueDate) - getDueTimestamp(b.dueDate)
+      }
+      if (sortBy === 'status') {
+        return getStatusRank(a.statusId) - getStatusRank(b.statusId) || getPriorityRank(b.priorityId) - getPriorityRank(a.priorityId)
+      }
+      if (sortBy === 'case-newest') {
+        return getCaseIdNumber(b.id) - getCaseIdNumber(a.id)
+      }
+      if (sortBy === 'case-oldest') {
+        return getCaseIdNumber(a.id) - getCaseIdNumber(b.id)
+      }
 
-    const next = [...files, ...supportedFiles].slice(0, 5)
-    const totalSize = next.reduce((sum, file) => sum + file.size, 0)
+      const attentionDifference = getAttentionRank(a.dueDate) - getAttentionRank(b.dueDate)
+      if (attentionDifference !== 0) return attentionDifference
 
-    if (totalSize > 25 * 1024 * 1024) {
-      setError('Supporting documents must be 25 MB or less in total.')
-      return
-    }
+      const priorityDifference = getPriorityRank(b.priorityId) - getPriorityRank(a.priorityId)
+      if (priorityDifference !== 0) return priorityDifference
 
-    setFiles(next)
-    setDocumentReview(null)
-    setDocumentText('')
-    setError('')
+      return getDueTimestamp(a.dueDate) - getDueTimestamp(b.dueDate) || getCaseIdNumber(b.id) - getCaseIdNumber(a.id)
+    })
+  }, [
+    cases,
+    assigneeFilter,
+    categoryFilter,
+    dueDateFilter,
+    priorityFilter,
+    searchText,
+    sortBy,
+    statusFilter,
+    tagFilter,
+    teamFilter,
+  ])
+
+  const filtersAreActive = Boolean(
+    searchText.trim() || statusFilter !== 'all' || priorityFilter !== 'all' ||
+    categoryFilter !== 'all' || teamFilter !== 'all' || assigneeFilter !== 'all' ||
+    tagFilter !== 'all' || dueDateFilter !== 'all' || sortBy !== 'attention'
+  )
+
+  const activeDetailFilters = [
+    categoryFilter !== 'all'
+      ? { key: 'category', label: categories.find((item) => item.id === categoryFilter)?.name ?? categoryFilter }
+      : null,
+    teamFilter !== 'all'
+      ? { key: 'team', label: teams.find((item) => item.id === teamFilter)?.name ?? teamFilter }
+      : null,
+    assigneeFilter !== 'all'
+      ? { key: 'assignee', label: members.find((item) => item.id === assigneeFilter)?.name ?? assigneeFilter }
+      : null,
+    tagFilter !== 'all'
+      ? { key: 'tag', label: tags.find((item) => item.id === tagFilter)?.name ?? tagFilter }
+      : null,
+  ].filter((item): item is { key: string; label: string } => Boolean(item))
+
+  const clearDetailFilter = (key: string) => {
+    if (key === 'category') setCategoryFilter('all')
+    if (key === 'team') setTeamFilter('all')
+    if (key === 'assignee') setAssigneeFilter('all')
+    if (key === 'tag') setTagFilter('all')
   }
 
-  const addFiles = (event: ChangeEvent<HTMLInputElement>) => {
-    acceptFiles(Array.from(event.target.files ?? []))
-    event.target.value = ''
+  const clearFilters = () => {
+    setSearchText('')
+    setStatusFilter('all')
+    setPriorityFilter('all')
+    setCategoryFilter('all')
+    setTeamFilter('all')
+    setAssigneeFilter('all')
+    setTagFilter('all')
+    setDueDateFilter('all')
+    setSortBy('attention')
   }
 
-  const dropFiles = (event: DragEvent<HTMLLabelElement>) => {
-    event.preventDefault()
-    setIsDraggingFiles(false)
-    acceptFiles(Array.from(event.dataTransfer.files ?? []))
-  }
-
-
-  const submitInquiry = () => {
-    setStep('submitted')
-    window.scrollTo(0, 0)
-  }
+  useEffect(() => {
+    document.body.classList.add('business-route')
+    document.title = 'All cases | Teltruva for Business'
+    return () => document.body.classList.remove('business-route')
+  }, [])
 
   return (
-    <div className="business-page intake-simple-page">
-      <header className="intake-simple-header">
-        <div className="intake-company-brand">
-          <div><strong>Example Hotel Support</strong><small>Powered by Teltruva</small></div>
-        </div>
-        <label className="intake-language-control">
-          <span>Language</span>
-          <select value={data.language} onChange={(event) => update('language', event.target.value)}>
-            <option>English</option>
-            <option>Japanese</option>
-            <option>Spanish</option>
-          </select>
-        </label>
+    <div className="business-page">
+      <header className="workspace-header">
+        <button className="workspace-brand" type="button" onClick={() => window.location.href = '/business'}>
+          <span className="workspace-brand-mark">T</span>
+          <span><strong>Teltruva</strong><small>for Business</small></span>
+        </button>
+        <p className="workspace-purpose">Case workspace</p>
+        <nav className="workspace-nav">
+          <button type="button" onClick={() => window.location.href = '/business'}>← Back to dashboard</button>
+          <button type="button" onClick={() => window.location.href = '/'}>Individual service</button>
+        </nav>
       </header>
 
-      <main className="intake-simple-main">
-        {step === 'edit' && (
-          <>
-            <section className="intake-simple-heading">
-              <p className="workspace-kicker">Customer support</p>
-              <h1>Contact Example Hotel</h1>
-              <p>Describe the issue in your own words and add any documents you already have. You will review everything before submitting.</p>
-            </section>
+      <main className="workspace-main cases-page-main">
+        <section className="all-cases-heading">
+          <div>
+            <p className="workspace-kicker">Case workspace</p>
+            <h1>All cases</h1>
+            <p>Search the current company workspace and narrow cases by status, priority, category, team, assignee, tag, or due date.</p>
+          </div>
+        </section>
 
-            <form className="intake-simple-form" onSubmit={review}>
-              <section className="intake-simple-section" aria-labelledby="contact-section-title">
-                <div className="intake-simple-section-heading">
-                  <h2 id="contact-section-title">Contact information</h2>
-                  <p>Enter the name and email address the hotel should use to contact you.</p>
-                </div>
-                <div className="intake-simple-grid">
-                  <label>
-                    Contact name <b>Required</b>
-                    <input value={data.contactName} onChange={(event) => update('contactName', event.target.value)} placeholder="Your name" />
-                  </label>
-                  <label>
-                    Email <b>Required</b>
-                    <input type="email" value={data.email} onChange={(event) => update('email', event.target.value)} placeholder="name@example.com" />
-                  </label>
-                </div>
-              </section>
+        <section className="case-filter-panel compact-case-filter-panel" aria-label="Case search and filters">
+          <label className="case-search-field compact-search-field">
+            <span>Search</span>
+            <input
+              type="search"
+              value={searchText}
+              onChange={(event) => setSearchText(event.target.value)}
+              placeholder="Search by case ID or title"
+            />
+          </label>
 
-              <section className="intake-simple-section" aria-labelledby="inquiry-section-title">
-                <div className="intake-simple-section-heading">
-                  <h2 id="inquiry-section-title">Your inquiry</h2>
-                  <p>Billing, refunds, reservations, service issues, document requests, and other inquiries are welcome.</p>
-                </div>
-                <label>
-                  What happened or what do you need? <b>Required</b>
-                  <textarea value={data.issue} onChange={(event) => update('issue', event.target.value)} placeholder="Describe the issue or request in your own words." />
-                </label>
-                <label>
-                  What outcome would you like?
-                  <textarea value={data.requestedOutcome} onChange={(event) => update('requestedOutcome', event.target.value)} placeholder="For example: Please explain the charge and refund it if it was added incorrectly." />
-                </label>
-              </section>
+          <div className="primary-filter-grid">
+            <label className="case-filter-field">
+              <span>Status</span>
+              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                <option value="all">All statuses</option>
+                {statuses.map((status) => (
+                  <option key={status.id} value={status.id}>{status.name}</option>
+                ))}
+              </select>
+            </label>
 
-              <section className="intake-simple-section" aria-labelledby="documents-section-title">
-                <div className="intake-simple-section-heading">
-                  <h2 id="documents-section-title">Supporting documents</h2>
-                  <p>Add a receipt, folio, booking confirmation, invoice, or screenshot if available. Teltruva will use documents to identify relevant details.</p>
-                </div>
+            <label className="case-filter-field">
+              <span>Priority</span>
+              <select value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value)}>
+                <option value="all">All priorities</option>
+                {priorities.map((priority) => (
+                  <option key={priority.id} value={priority.id}>{priority.name}</option>
+                ))}
+              </select>
+            </label>
 
-                <label
-                  className={`${isDraggingFiles ? 'intake-simple-upload is-dragging' : 'intake-simple-upload'}${files.length > 0 ? ' has-files' : ''}`}
-                  onDragEnter={(event) => { event.preventDefault(); setIsDraggingFiles(true) }}
-                  onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; setIsDraggingFiles(true) }}
-                  onDragLeave={(event) => {
-                    event.preventDefault()
-                    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setIsDraggingFiles(false)
-                  }}
-                  onDrop={dropFiles}
-                >
-                  <span className="intake-upload-icon" aria-hidden="true">↑</span>
-                  <strong>
-                    {isDraggingFiles
-                      ? 'Drop documents here'
-                      : files.length > 0
-                        ? `${files.length} document${files.length === 1 ? '' : 's'} ready to read`
-                        : 'Select or drop documents here'}
-                  </strong>
-                  <span>{files.length > 0 ? 'Drop more documents here or select additional files' : 'PDF, PNG, JPG, or WEBP · Up to 5 files · 25 MB total'}</span>
-                  <input type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.webp" onChange={addFiles} />
-                </label>
+            <label className="case-filter-field">
+              <span>Due date</span>
+              <select value={dueDateFilter} onChange={(event) => setDueDateFilter(event.target.value)}>
+                <option value="all">All due dates</option>
+                <option value="overdue">Overdue</option>
+                <option value="today">Due today</option>
+                {dueDateRules.dueSoonThresholds.map((days) => (
+                  <option key={days} value={`within-${days}`}>Due within {days} day{days === 1 ? '' : 's'}</option>
+                ))}
+                <option value="none">No due date</option>
+              </select>
+            </label>
 
-                {files.length > 0 && (
-                  <section className="intake-added-documents" aria-label="Documents ready to read">
-                    <header><div><strong>Documents added</strong><span>{files.length} file{files.length === 1 ? '' : 's'}</span></div><small>Ready to read</small></header>
-                    <div className="intake-added-document-list">
-                      {files.map((file, index) => (
-                        <article key={`${file.name}-${index}`}>
-                          <span className={`intake-file-type ${fileTypeLabel(file).toLowerCase()}`} aria-hidden="true">{fileTypeLabel(file)}</span>
-                          <div><strong>{file.name}</strong><span>{formatFileSize(file.size)} · Ready to read</span></div>
-                          <button type="button" onClick={() => { setFiles((current) => current.filter((_, position) => position !== index)); setDocumentReview(null); setDocumentText('') }}>Remove</button>
-                        </article>
-                      ))}
+            <label className="case-filter-field case-sort-field">
+              <span>Sort by</span>
+              <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
+                <option value="attention">Attention first</option>
+                <option value="due-date">Due date: nearest first</option>
+                <option value="priority">Priority: highest first</option>
+                <option value="status">Status order</option>
+                <option value="case-newest">Case ID: newest first</option>
+                <option value="case-oldest">Case ID: oldest first</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="filter-panel-actions">
+            <button
+              className="more-filters-button"
+              type="button"
+              aria-expanded={showMoreFilters}
+              aria-controls="advanced-case-filters"
+              onClick={() => setShowMoreFilters((current) => !current)}
+            >
+              {showMoreFilters ? 'Hide more filters' : 'More filters'}
+              {activeDetailFilters.length > 0 && <span>{activeDetailFilters.length}</span>}
+            </button>
+
+            <button
+              className="clear-case-filters compact-clear-filters"
+              type="button"
+              onClick={clearFilters}
+              disabled={!filtersAreActive}
+            >
+              Clear filters
+            </button>
+          </div>
+
+          {showMoreFilters && (
+            <div className="advanced-filter-grid" id="advanced-case-filters">
+              <label className="case-filter-field">
+                <span>Category</span>
+                <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
+                  <option value="all">All categories</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>{category.name}{category.enabled ? '' : ' (disabled)'}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="case-filter-field">
+                <span>Team</span>
+                <select value={teamFilter} onChange={(event) => setTeamFilter(event.target.value)}>
+                  <option value="all">All teams</option>
+                  {teams.map((team) => (
+                    <option key={team.id} value={team.id}>{team.name}{team.enabled ? '' : ' (disabled)'}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="case-filter-field">
+                <span>Assignee</span>
+                <select value={assigneeFilter} onChange={(event) => setAssigneeFilter(event.target.value)}>
+                  <option value="all">All assignees</option>
+                  {members.map((member) => (
+                    <option key={member.id} value={member.id}>{member.name}{member.enabled ? '' : ' (disabled)'}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="case-filter-field">
+                <span>Tag</span>
+                <select value={tagFilter} onChange={(event) => setTagFilter(event.target.value)}>
+                  <option value="all">All tags</option>
+                  {tags.map((tag) => (
+                    <option key={tag.id} value={tag.id}>{tag.name}{tag.enabled ? '' : ' (disabled)'}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          )}
+
+          {activeDetailFilters.length > 0 && (
+            <div className="active-filter-chips" aria-label="Active detailed filters">
+              {activeDetailFilters.map((filter) => (
+                <span className="active-filter-chip" key={filter.key}>
+                  {filter.label}
+                  <button type="button" aria-label={`Remove ${filter.label} filter`} onClick={() => clearDetailFilter(filter.key)}>×</button>
+                </span>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="case-list-section all-cases-section">
+          <div className="section-title">
+            <div><p className="workspace-kicker">Current demo data</p><h2>Cases</h2></div>
+            <span>{visibleCases.length} of {cases.length} cases</span>
+          </div>
+
+          {visibleCases.length > 0 ? (
+            <div className="case-list">
+              {visibleCases.map((item) => {
+                const status = statuses.find((entry) => entry.id === item.statusId)
+                const priority = priorities.find((entry) => entry.id === item.priorityId)
+
+                return (
+                  <article className="case-row" key={item.id}>
+                    <div className="case-row-main">
+                      <span className="status-dot" style={{ background: status?.color ?? '#64748b' }} />
+                      <div>
+                        <small>{item.id}</small>
+                        <h3 title={item.title}>{item.title}</h3>
+                        {item.dueDateSummary && (
+                          <span style={{
+                            width: 'max-content',
+                            maxWidth: '100%',
+                            marginTop: '8px',
+                            padding: '5px 9px',
+                            display: 'inline-flex',
+                            border: `1px solid ${item.dueDateSummary.border}`,
+                            borderRadius: '999px',
+                            background: item.dueDateSummary.background,
+                            color: item.dueDateSummary.color,
+                            fontSize: '15px',
+                            fontWeight: 800,
+                            lineHeight: 1.25,
+                          }}>
+                            {item.dueDateSummary.label}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </section>
-                )}
 
-                <button className="intake-manual-toggle" type="button" aria-expanded={showManualIdentifiers} onClick={() => setShowManualIdentifiers((current) => !current)}>
-                  {showManualIdentifiers ? 'Hide manual identification fields' : 'I do not have a document or want to enter identifying information'}
-                </button>
-
-                {showManualIdentifiers && (
-                  <div className="intake-manual-fields">
-                    <p>Use the same spelling shown on the reservation, purchase, or document when possible.</p>
-                    <div className="intake-simple-grid">
-                      <label>
-                        Name shown on reservation or document
-                        <input value={data.documentName} onChange={(event) => update('documentName', event.target.value)} placeholder="For example: TAITO UENO" />
-                      </label>
-                      <label>
-                        Reservation, folio, or reference number
-                        <input value={data.referenceNumber} onChange={(event) => update('referenceNumber', event.target.value)} placeholder="If known" />
-                      </label>
+                    <div className="case-row-meta">
+                      <span>{item.language}</span>
+                      <span>{item.evidence}</span>
+                      <span>Priority: {priority?.name ?? 'Not set'}</span>
                     </div>
-                  </div>
-                )}
-              </section>
 
-              {error && <p className="intake-simple-error" role="alert">{error}</p>}
-              {isReadingDocuments && (
-                <div className="intake-processing-status" role="status" aria-live="polite">
-                  <span className="intake-processing-spinner" aria-hidden="true" />
-                  <div><strong>Reading {files.length} document{files.length === 1 ? '' : 's'}…</strong><p>Extracting text and organizing the information for review.</p></div>
-                </div>
-              )}
-
-              <div className="intake-simple-actions">
-                <span>Nothing will be submitted until you review it.</span>
-                <button className="primary-button" type="submit" disabled={isReadingDocuments}>{isReadingDocuments ? 'Reading documents…' : 'Review inquiry'}</button>
-              </div>
-            </form>
-          </>
-        )}
-
-        {step === 'review' && (
-          <section className="intake-simple-review">
-            <div className="intake-simple-heading">
-              <p className="workspace-kicker">Review before submitting</p>
-              <h1>Review your inquiry</h1>
-              <p>Confirm the information below. The inquiry has not been submitted yet.</p>
+                    <div className="case-row-action">
+                      <span
+                        className="status-pill"
+                        style={{
+                          background: `${status?.color ?? '#64748b'}22`,
+                          color: status?.color ?? '#64748b',
+                        }}
+                      >
+                        {status?.name ?? 'Unknown status'}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={!item.route}
+                        onClick={() => { if (item.route) window.location.href = item.route }}
+                      >
+                        Open case
+                      </button>
+                    </div>
+                  </article>
+                )
+              })}
             </div>
-
-            <div className="intake-simple-review-card">
-              <div className="intake-review-summary-grid">
-                <div><span>Language</span><strong>{data.language}</strong></div>
-                <div><span>Contact name</span><strong>{data.contactName}</strong></div>
-                <div><span>Email</span><strong>{data.email}</strong></div>
-              </div>
-
-              <div className="intake-review-block"><h2>Inquiry</h2><p>{data.issue}</p></div>
-              <div className="intake-review-block"><h2>Requested outcome</h2><p>{data.requestedOutcome || 'Not provided'}</p></div>
-              <div className="intake-review-block"><h2>Supporting documents</h2>{files.length > 0 ? <ul>{files.map((file) => <li key={file.name}>{file.name}</li>)}</ul> : <p>No documents added</p>}</div>
-
-              {documentReview && (
-                <div className="intake-review-block document-review-block">
-                  <h2>Information found in the documents</h2>
-                  {documentReview.confirmedFacts.length > 0 ? (
-                    <dl>
-                      {documentReview.confirmedFacts.map((fact) => (
-                        <div key={fact.key}><dt>{fact.label}</dt><dd>{String(fact.value)}</dd></div>
-                      ))}
-                    </dl>
-                  ) : (
-                    <p>No structured details were confirmed from the documents.</p>
-                  )}
-                  {documentReview.primaryIdentifier ? (
-                    <p className="document-identifier-confirmed"><strong>{documentReview.primaryIdentifier.label}:</strong> {documentReview.primaryIdentifier.value}</p>
-                  ) : (
-                    <p className="document-identifier-missing">A primary reservation, folio, order, or reference number was not confirmed. Add it manually if known.</p>
-                  )}
-                  <details className="ocr-text-details"><summary>View text read from documents</summary><pre>{documentText}</pre></details>
-                </div>
-              )}
-
-              {(data.documentName || data.referenceNumber) && (
-                <div className="intake-review-block"><h2>Manually provided identification</h2><dl>{data.documentName && <div><dt>Name on reservation or document</dt><dd>{data.documentName}</dd></div>}{data.referenceNumber && <div><dt>Reference number</dt><dd>{data.referenceNumber}</dd></div>}</dl></div>
-              )}
+          ) : (
+            <div className="case-filter-empty" role="status">
+              <strong>No cases match these filters.</strong>
+              <p>Change the search text, status, priority, category, team, assignee, tag, or due date to see other cases.</p>
+              <button type="button" onClick={clearFilters}>Clear filters</button>
             </div>
-
-            <div className="intake-simple-actions">
-              <button className="intake-secondary-action" type="button" onClick={() => { setStep('edit'); window.scrollTo(0, 0) }}>← Back to edit</button>
-              <button className="primary-button" type="button" onClick={submitInquiry}>Submit inquiry</button>
-            </div>
-          </section>
-        )}
-
-        {step === 'submitted' && (
-          <section className="intake-simple-submitted">
-            <span aria-hidden="true">✓</span>
-            <h1>Inquiry received</h1>
-            <p>This demo has completed the customer submission step. The next phase will connect the reviewed information to the company workspace.</p>
-            <button className="primary-button" type="button" onClick={() => { setData(emptyIntake); setFiles([]); setDocumentReview(null); setDocumentText(''); setShowManualIdentifiers(false); setStep('edit'); window.scrollTo(0, 0) }}>Start another inquiry</button>
-          </section>
-        )}
+          )}
+        </section>
       </main>
+
+      <footer className="workspace-footer">
+        <strong>Teltruva for Business</strong>
+        <span>Multilingual support, structured for action.</span>
+        <button type="button" onClick={() => window.location.href = '/'}>Individual service</button>
+        <span>© 2026 Teltruva</span>
+      </footer>
     </div>
   )
 }
 
-export default BusinessIntakePage
+export default BusinessCaseListPage
