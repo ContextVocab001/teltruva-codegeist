@@ -115,6 +115,8 @@ function BusinessCaseListPage() {
   const [assigneeFilter, setAssigneeFilter] = useState('all')
   const [tagFilter, setTagFilter] = useState('all')
   const [dueDateFilter, setDueDateFilter] = useState('all')
+  const [sortBy, setSortBy] = useState('attention')
+  const [showMoreFilters, setShowMoreFilters] = useState(false)
 
   const cases = useMemo(
     () => sampleCases.map((item) => ({
@@ -151,10 +153,44 @@ function BusinessCaseListPage() {
     return true
   }
 
-  const filteredCases = useMemo(() => {
-    const query = searchText.trim().toLowerCase()
+  const getDueTimestamp = (dueDate: string) => {
+    if (!dueDate) return Number.POSITIVE_INFINITY
+    const timestamp = new Date(`${dueDate}T00:00:00`).getTime()
+    return Number.isNaN(timestamp) ? Number.POSITIVE_INFINITY : timestamp
+  }
 
-    return cases.filter((item) => {
+  const getPriorityRank = (priorityId: string) => {
+    const index = priorities.findIndex((priority) => priority.id === priorityId)
+    return index < 0 ? -1 : index
+  }
+
+  const getStatusRank = (statusId: string) => {
+    const index = statuses.findIndex((status) => status.id === statusId)
+    return index < 0 ? Number.MAX_SAFE_INTEGER : index
+  }
+
+  const getCaseIdNumber = (caseId: string) => {
+    const match = caseId.match(/(\d+)$/)
+    return match ? Number(match[1]) : 0
+  }
+
+  const getAttentionRank = (dueDate: string) => {
+    if (!dueDate) return 2
+
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const due = new Date(`${dueDate}T00:00:00`)
+    if (Number.isNaN(due.getTime())) return 2
+
+    const days = Math.round((due.getTime() - today.getTime()) / 86400000)
+    if (days < 0) return 0
+    if (days <= largestDueSoonThreshold) return 1
+    return 3
+  }
+
+  const visibleCases = useMemo(() => {
+    const query = searchText.trim().toLowerCase()
+    const filtered = cases.filter((item) => {
       const matchesSearch = !query || item.id.toLowerCase().includes(query) || item.title.toLowerCase().includes(query)
       const matchesStatus = statusFilter === 'all' || item.statusId === statusFilter
       const matchesPriority = priorityFilter === 'all' || item.priorityId === priorityFilter
@@ -165,13 +201,72 @@ function BusinessCaseListPage() {
       const matchesDueDate = matchesDueDateFilter(item.dueDate)
       return matchesSearch && matchesStatus && matchesPriority && matchesCategory && matchesTeam && matchesAssignee && matchesTag && matchesDueDate
     })
-  }, [cases, assigneeFilter, categoryFilter, dueDateFilter, priorityFilter, searchText, statusFilter, tagFilter, teamFilter])
+
+    return [...filtered].sort((a, b) => {
+      if (sortBy === 'due-date') {
+        return getDueTimestamp(a.dueDate) - getDueTimestamp(b.dueDate) || getPriorityRank(b.priorityId) - getPriorityRank(a.priorityId)
+      }
+      if (sortBy === 'priority') {
+        return getPriorityRank(b.priorityId) - getPriorityRank(a.priorityId) || getDueTimestamp(a.dueDate) - getDueTimestamp(b.dueDate)
+      }
+      if (sortBy === 'status') {
+        return getStatusRank(a.statusId) - getStatusRank(b.statusId) || getPriorityRank(b.priorityId) - getPriorityRank(a.priorityId)
+      }
+      if (sortBy === 'case-newest') {
+        return getCaseIdNumber(b.id) - getCaseIdNumber(a.id)
+      }
+      if (sortBy === 'case-oldest') {
+        return getCaseIdNumber(a.id) - getCaseIdNumber(b.id)
+      }
+
+      const attentionDifference = getAttentionRank(a.dueDate) - getAttentionRank(b.dueDate)
+      if (attentionDifference !== 0) return attentionDifference
+
+      const priorityDifference = getPriorityRank(b.priorityId) - getPriorityRank(a.priorityId)
+      if (priorityDifference !== 0) return priorityDifference
+
+      return getDueTimestamp(a.dueDate) - getDueTimestamp(b.dueDate) || getCaseIdNumber(b.id) - getCaseIdNumber(a.id)
+    })
+  }, [
+    cases,
+    assigneeFilter,
+    categoryFilter,
+    dueDateFilter,
+    priorityFilter,
+    searchText,
+    sortBy,
+    statusFilter,
+    tagFilter,
+    teamFilter,
+  ])
 
   const filtersAreActive = Boolean(
     searchText.trim() || statusFilter !== 'all' || priorityFilter !== 'all' ||
     categoryFilter !== 'all' || teamFilter !== 'all' || assigneeFilter !== 'all' ||
-    tagFilter !== 'all' || dueDateFilter !== 'all'
+    tagFilter !== 'all' || dueDateFilter !== 'all' || sortBy !== 'attention'
   )
+
+  const activeDetailFilters = [
+    categoryFilter !== 'all'
+      ? { key: 'category', label: categories.find((item) => item.id === categoryFilter)?.name ?? categoryFilter }
+      : null,
+    teamFilter !== 'all'
+      ? { key: 'team', label: teams.find((item) => item.id === teamFilter)?.name ?? teamFilter }
+      : null,
+    assigneeFilter !== 'all'
+      ? { key: 'assignee', label: members.find((item) => item.id === assigneeFilter)?.name ?? assigneeFilter }
+      : null,
+    tagFilter !== 'all'
+      ? { key: 'tag', label: tags.find((item) => item.id === tagFilter)?.name ?? tagFilter }
+      : null,
+  ].filter((item): item is { key: string; label: string } => Boolean(item))
+
+  const clearDetailFilter = (key: string) => {
+    if (key === 'category') setCategoryFilter('all')
+    if (key === 'team') setTeamFilter('all')
+    if (key === 'assignee') setAssigneeFilter('all')
+    if (key === 'tag') setTagFilter('all')
+  }
 
   const clearFilters = () => {
     setSearchText('')
@@ -182,6 +277,7 @@ function BusinessCaseListPage() {
     setAssigneeFilter('all')
     setTagFilter('all')
     setDueDateFilter('all')
+    setSortBy('attention')
   }
 
   useEffect(() => {
@@ -213,8 +309,8 @@ function BusinessCaseListPage() {
           </div>
         </section>
 
-        <section className="case-filter-panel" aria-label="Case search and filters">
-          <label className="case-search-field">
+        <section className="case-filter-panel compact-case-filter-panel" aria-label="Case search and filters">
+          <label className="case-search-field compact-search-field">
             <span>Search</span>
             <input
               type="search"
@@ -224,101 +320,140 @@ function BusinessCaseListPage() {
             />
           </label>
 
-          <label className="case-filter-field">
-            <span>Status</span>
-            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-              <option value="all">All statuses</option>
-              {statuses.map((status) => (
-                <option key={status.id} value={status.id}>{status.name}</option>
-              ))}
-            </select>
-          </label>
+          <div className="primary-filter-grid">
+            <label className="case-filter-field">
+              <span>Status</span>
+              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                <option value="all">All statuses</option>
+                {statuses.map((status) => (
+                  <option key={status.id} value={status.id}>{status.name}</option>
+                ))}
+              </select>
+            </label>
 
-          <label className="case-filter-field">
-            <span>Priority</span>
-            <select value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value)}>
-              <option value="all">All priorities</option>
-              {priorities.map((priority) => (
-                <option key={priority.id} value={priority.id}>{priority.name}</option>
-              ))}
-            </select>
-          </label>
+            <label className="case-filter-field">
+              <span>Priority</span>
+              <select value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value)}>
+                <option value="all">All priorities</option>
+                {priorities.map((priority) => (
+                  <option key={priority.id} value={priority.id}>{priority.name}</option>
+                ))}
+              </select>
+            </label>
 
-          <label className="case-filter-field">
-            <span>Category</span>
-            <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
-              <option value="all">All categories</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}{category.enabled ? '' : ' (disabled)'}
-                </option>
-              ))}
-            </select>
-          </label>
+            <label className="case-filter-field">
+              <span>Due date</span>
+              <select value={dueDateFilter} onChange={(event) => setDueDateFilter(event.target.value)}>
+                <option value="all">All due dates</option>
+                <option value="overdue">Overdue</option>
+                <option value="today">Due today</option>
+                {dueDateRules.dueSoonThresholds.map((days) => (
+                  <option key={days} value={`within-${days}`}>Due within {days} day{days === 1 ? '' : 's'}</option>
+                ))}
+                <option value="none">No due date</option>
+              </select>
+            </label>
 
-          <label className="case-filter-field">
-            <span>Team</span>
-            <select value={teamFilter} onChange={(event) => setTeamFilter(event.target.value)}>
-              <option value="all">All teams</option>
-              {teams.map((team) => (
-                <option key={team.id} value={team.id}>
-                  {team.name}{team.enabled ? '' : ' (disabled)'}
-                </option>
-              ))}
-            </select>
-          </label>
+            <label className="case-filter-field case-sort-field">
+              <span>Sort by</span>
+              <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
+                <option value="attention">Attention first</option>
+                <option value="due-date">Due date: nearest first</option>
+                <option value="priority">Priority: highest first</option>
+                <option value="status">Status order</option>
+                <option value="case-newest">Case ID: newest first</option>
+                <option value="case-oldest">Case ID: oldest first</option>
+              </select>
+            </label>
+          </div>
 
-          <label className="case-filter-field">
-            <span>Assignee</span>
-            <select value={assigneeFilter} onChange={(event) => setAssigneeFilter(event.target.value)}>
-              <option value="all">All assignees</option>
-              {members.map((member) => (
-                <option key={member.id} value={member.id}>
-                  {member.name}{member.enabled ? '' : ' (disabled)'}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="filter-panel-actions">
+            <button
+              className="more-filters-button"
+              type="button"
+              aria-expanded={showMoreFilters}
+              aria-controls="advanced-case-filters"
+              onClick={() => setShowMoreFilters((current) => !current)}
+            >
+              {showMoreFilters ? 'Hide more filters' : 'More filters'}
+              {activeDetailFilters.length > 0 && <span>{activeDetailFilters.length}</span>}
+            </button>
 
-          <label className="case-filter-field">
-            <span>Tag</span>
-            <select value={tagFilter} onChange={(event) => setTagFilter(event.target.value)}>
-              <option value="all">All tags</option>
-              {tags.map((tag) => (
-                <option key={tag.id} value={tag.id}>
-                  {tag.name}{tag.enabled ? '' : ' (disabled)'}
-                </option>
-              ))}
-            </select>
-          </label>
+            <button
+              className="clear-case-filters compact-clear-filters"
+              type="button"
+              onClick={clearFilters}
+              disabled={!filtersAreActive}
+            >
+              Clear filters
+            </button>
+          </div>
 
-          <label className="case-filter-field">
-            <span>Due date</span>
-            <select value={dueDateFilter} onChange={(event) => setDueDateFilter(event.target.value)}>
-              <option value="all">All due dates</option>
-              <option value="overdue">Overdue</option>
-              <option value="today">Due today</option>
-              {dueDateRules.dueSoonThresholds.map((days) => (
-                <option key={days} value={`within-${days}`}>Due within {days} day{days === 1 ? '' : 's'}</option>
-              ))}
-              <option value="none">No due date</option>
-            </select>
-          </label>
+          {showMoreFilters && (
+            <div className="advanced-filter-grid" id="advanced-case-filters">
+              <label className="case-filter-field">
+                <span>Category</span>
+                <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)}>
+                  <option value="all">All categories</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>{category.name}{category.enabled ? '' : ' (disabled)'}</option>
+                  ))}
+                </select>
+              </label>
 
-          <button className="clear-case-filters" type="button" onClick={clearFilters} disabled={!filtersAreActive}>
-            Clear filters
-          </button>
+              <label className="case-filter-field">
+                <span>Team</span>
+                <select value={teamFilter} onChange={(event) => setTeamFilter(event.target.value)}>
+                  <option value="all">All teams</option>
+                  {teams.map((team) => (
+                    <option key={team.id} value={team.id}>{team.name}{team.enabled ? '' : ' (disabled)'}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="case-filter-field">
+                <span>Assignee</span>
+                <select value={assigneeFilter} onChange={(event) => setAssigneeFilter(event.target.value)}>
+                  <option value="all">All assignees</option>
+                  {members.map((member) => (
+                    <option key={member.id} value={member.id}>{member.name}{member.enabled ? '' : ' (disabled)'}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="case-filter-field">
+                <span>Tag</span>
+                <select value={tagFilter} onChange={(event) => setTagFilter(event.target.value)}>
+                  <option value="all">All tags</option>
+                  {tags.map((tag) => (
+                    <option key={tag.id} value={tag.id}>{tag.name}{tag.enabled ? '' : ' (disabled)'}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          )}
+
+          {activeDetailFilters.length > 0 && (
+            <div className="active-filter-chips" aria-label="Active detailed filters">
+              {activeDetailFilters.map((filter) => (
+                <span className="active-filter-chip" key={filter.key}>
+                  {filter.label}
+                  <button type="button" aria-label={`Remove ${filter.label} filter`} onClick={() => clearDetailFilter(filter.key)}>×</button>
+                </span>
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="case-list-section all-cases-section">
           <div className="section-title">
             <div><p className="workspace-kicker">Current demo data</p><h2>Cases</h2></div>
-            <span>{filteredCases.length} of {cases.length} cases</span>
+            <span>{visibleCases.length} of {cases.length} cases</span>
           </div>
 
-          {filteredCases.length > 0 ? (
+          {visibleCases.length > 0 ? (
             <div className="case-list">
-              {filteredCases.map((item) => {
+              {visibleCases.map((item) => {
                 const status = statuses.find((entry) => entry.id === item.statusId)
                 const priority = priorities.find((entry) => entry.id === item.priorityId)
 
