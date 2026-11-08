@@ -164,7 +164,7 @@ function BusinessCaseListPage() {
     return index < 0 ? -1 : index
   }
 
-  const getStatusRank = (statusId: string) => {
+  const getStatusRank = (statusId: string | undefined) => {
     const index = statuses.findIndex((status) => status.id === statusId)
     return index < 0 ? Number.MAX_SAFE_INTEGER : index
   }
