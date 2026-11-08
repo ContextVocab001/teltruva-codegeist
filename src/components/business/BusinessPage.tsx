@@ -99,6 +99,7 @@ function BusinessPage() {
         </button>
         <p className="workspace-purpose">Multilingual customer support workspace</p>
         <nav className="workspace-nav">
+          <button className="test-form-button" type="button" onClick={() => window.location.href = '/f/example-hotel/general-support'}>Test customer form</button>
           <a href="#case-flow">How cases move</a>
           <button type="button" onClick={() => window.location.href = '/'}>Individual service</button>
         </nav>

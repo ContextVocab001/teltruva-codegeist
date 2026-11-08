@@ -10,6 +10,7 @@ import BusinessPage from './components/business/BusinessPage'
 import BusinessCaseListPage from './components/business/BusinessCaseListPage'
 import BusinessCasePage from './components/business/BusinessCasePage'
 import BusinessSettingsPage from './components/business/BusinessSettingsPage'
+import BusinessIntakePage from './components/business/BusinessIntakePage'
 import type { CaptureOrderResponse } from './types/payment'
 import type { TeltruvaCase } from './types/case'
 import type { ProcessingStage } from './types/processing'
@@ -678,6 +679,11 @@ function App() {
   if (normalizedPath === '/business/cases') return <BusinessCaseListPage />
   if (normalizedPath === '/business/cases/demo') return <BusinessCasePage />
   if (normalizedPath === '/business/settings') return <BusinessSettingsPage />
+  if (normalizedPath === '/f/example-hotel/general-support') return <BusinessIntakePage />
+  if (normalizedPath === '/business/intake/demo') {
+    window.history.replaceState({}, '', '/f/example-hotel/general-support')
+    return <BusinessIntakePage />
+  }
   return <ConsumerApp />
 }
 
