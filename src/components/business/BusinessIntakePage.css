@@ -12,3 +12,45 @@
 .intake-simple-review{display:grid;gap:24px}.intake-simple-review-card{padding:30px;border:1px solid #d5dfeb;border-radius:18px;background:#fff;box-shadow:0 12px 34px rgba(30,54,83,.06)}.intake-review-summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.intake-review-summary-grid>div{padding:15px;border:1px solid #dce5ef;border-radius:11px;background:#fafcff}.intake-review-summary-grid span,.intake-review-summary-grid strong{display:block}.intake-review-summary-grid span{color:#687b91;font-size:14px}.intake-review-summary-grid strong{margin-top:4px;font-size:17px}.intake-review-block{margin-top:21px;padding-top:21px;border-top:1px solid #e2e9f1}.intake-review-block h2{margin:0 0 8px;font-size:20px}.intake-review-block p,.intake-review-block li,.intake-review-block dd{color:#51667f;font-size:17px;line-height:1.6}.intake-review-block dl{display:grid;grid-template-columns:1fr 1fr;gap:10px}.intake-review-block dl>div{padding:12px;border-radius:9px;background:#f5f8fc}.intake-review-block dt{color:#6b7e94;font-size:14px}.intake-review-block dd{margin:3px 0 0;font-weight:750}
 .intake-simple-submitted{max-width:680px;margin:55px auto 0;padding:46px;border:1px solid #c9ded3;border-radius:20px;background:#fff;text-align:center;box-shadow:0 16px 44px rgba(30,54,83,.08)}.intake-simple-submitted>span{width:62px;height:62px;margin:auto;display:grid;place-items:center;border-radius:50%;background:#e5f6ed;color:#23734e;font-size:29px;font-weight:900}.intake-simple-submitted h1{margin:18px 0 0;font-size:38px}.intake-simple-submitted p{margin:13px auto 24px;max-width:540px;color:#60748d;font-size:18px;line-height:1.6}
 @media(max-width:720px){.intake-simple-header{align-items:flex-start;flex-direction:column}.intake-language-control{width:100%;justify-content:space-between}.intake-simple-main{width:90%;padding-top:38px}.intake-simple-form,.intake-simple-review-card{padding:22px}.intake-simple-grid,.intake-review-summary-grid,.intake-review-block dl{grid-template-columns:1fr}.intake-simple-actions{align-items:stretch;flex-direction:column}.intake-simple-actions button{width:100%}}
+
+/* OCR and document review states. */
+.intake-simple-actions .primary-button:disabled{opacity:.65;cursor:progress}
+.document-review-block dl{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.document-review-block dl>div{padding:12px;border:1px solid #dce5ef;border-radius:9px;background:#f7f9fc}
+.document-review-block dt{color:#6b7e94;font-size:14px}
+.document-review-block dd{margin:4px 0 0;color:#203956;font-size:17px;font-weight:800;overflow-wrap:anywhere}
+.document-identifier-confirmed,.document-identifier-missing{margin-top:13px!important;padding:12px 14px;border-radius:10px}
+.document-identifier-confirmed{border:1px solid #c8dfd2;background:#eff9f3;color:#286044!important}
+.document-identifier-missing{border:1px solid #ead39a;background:#fff9ec;color:#705825!important}
+.ocr-text-details{margin-top:14px;border:1px solid #dce5ef;border-radius:10px;background:#fff}
+.ocr-text-details summary{padding:12px 14px;color:#3152bd;font-size:15px;font-weight:800;cursor:pointer}
+.ocr-text-details pre{max-height:260px;margin:0;padding:14px;overflow:auto;border-top:1px solid #e2e9f1;background:#f7f9fc;color:#3f536b;font:14px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap}
+@media(max-width:720px){.document-review-block dl{grid-template-columns:1fr}}
+
+/* Drag-and-drop state for supporting documents. */
+.intake-simple-upload.is-dragging{border-color:#315ee8!important;background:#e8eeff;box-shadow:0 0 0 4px rgba(49,94,232,.12)}
+.intake-simple-upload.is-dragging strong{color:#2448bc}
+
+/* Clear document-added and OCR-processing feedback. */
+.intake-simple-upload{transition:border-color .16s ease,background .16s ease,box-shadow .16s ease}
+.intake-simple-upload.has-files{border-style:solid!important;border-color:#78c6a1!important;background:#f0fbf5}
+.intake-upload-icon{width:52px;height:52px;display:grid;place-items:center;border-radius:50%;background:linear-gradient(135deg,#2f6df6,#5c3ee8);color:#fff!important;font-size:27px!important;font-weight:700!important;line-height:1}
+.intake-simple-upload.has-files .intake-upload-icon{background:#1d9862}
+.intake-added-documents{margin-top:14px;border:1px solid #d7e2ec;border-radius:12px;overflow:hidden;background:#fff}
+.intake-added-documents>header{padding:13px 15px;display:flex;align-items:center;justify-content:space-between;gap:16px;background:#f7f9fc}
+.intake-added-documents>header div{display:flex;align-items:center;gap:10px}.intake-added-documents>header strong{color:#203956;font-size:16px}.intake-added-documents>header span{padding:3px 8px;border-radius:999px;background:#e7edf6;color:#53677f;font-size:13px;font-weight:800}.intake-added-documents>header small{color:#23734e;font-size:14px;font-weight:800}
+.intake-added-document-list{display:grid}.intake-added-document-list article{padding:13px 15px;display:grid;grid-template-columns:48px minmax(0,1fr) auto;align-items:center;gap:13px;border-top:1px solid #e7edf3}.intake-added-document-list article:first-child{border-top:0}
+.intake-file-type{width:48px;height:38px;display:grid;place-items:center;border-radius:8px;background:#e8eeff;color:#3152bd;font-size:11px;font-weight:900;letter-spacing:.03em}.intake-file-type.pdf{background:#fff0ee;color:#a33b35}.intake-added-document-list article>div{min-width:0}.intake-added-document-list article strong,.intake-added-document-list article span{display:block}.intake-added-document-list article strong{overflow:hidden;color:#203956;font-size:16px;text-overflow:ellipsis;white-space:nowrap}.intake-added-document-list article>div span{margin-top:3px;color:#657990;font-size:14px}.intake-added-document-list article button{border:0;background:transparent;color:#a54842;font:inherit;font-size:14px;font-weight:800;cursor:pointer}
+.intake-processing-status{margin-top:18px;padding:15px 17px;display:flex;align-items:flex-start;gap:13px;border:1px solid #bfd1f0;border-radius:11px;background:#f1f6ff;color:#294d82}.intake-processing-spinner{width:23px;height:23px;flex:0 0 auto;border:3px solid #c5d5f2;border-top-color:#315ee8;border-radius:50%;animation:intake-spin .8s linear infinite}.intake-processing-status strong{display:block}.intake-processing-status p{margin:4px 0 0;color:#5b7193;font-size:15px}
+@keyframes intake-spin{to{transform:rotate(360deg)}}
+@media(max-width:620px){.intake-added-document-list article{grid-template-columns:44px minmax(0,1fr)}.intake-added-document-list article button{grid-column:2;justify-self:start;padding:5px 0}.intake-added-documents>header{align-items:flex-start;flex-direction:column}}
+
+/* Center the PDF / IMAGE label inside the file-type badge. */
+.intake-added-document-list article .intake-file-type{
+  display:grid;
+  place-items:center;
+  align-self:center;
+  padding:0;
+  line-height:1;
+  text-align:center;
+}
