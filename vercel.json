@@ -1,12 +1,16 @@
 {
-    "rewrites": [
-      {
-        "source": "/business",
-        "destination": "/index.html"
-      },
-      {
-        "source": "/business/:path*",
-        "destination": "/index.html"
-      }
-    ]
-  }
+  "rewrites": [
+    {
+      "source": "/business",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/business/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/f/:path*",
+      "destination": "/index.html"
+    }
+  ]
+}
